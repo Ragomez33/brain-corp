@@ -1,0 +1,19 @@
+{
+  "name": "brain-corp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Orquestador del ecosistema Forge & Foundly: topología, análisis y sincronización de tickets con GitHub Issues.",
+  "scripts": {
+    "init-brain": "node scripts/init-brain.js",
+    "sync": "node scripts/sync-github.js",
+    "sanity": "node scripts/sanity-check.js",
+    "sync:pull": "node scripts/sync-pull.js",
+    "watch": "node scripts/watch-github.js",
+    "normalize": "node scripts/normalize-ticket.js",
+    "complete": "node scripts/complete-ticket.js",
+    "hotfix": "node scripts/hotfix.js"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  }
+}

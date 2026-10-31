@@ -1,0 +1,273 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-10-30",
+  "root": "/Users/raulgomez/Desktop/brain-corp",
+  "description": "Mapa de topología del ecosistema brain-corp. Monorepo contenedor con submodules git; forge-backend es la fuente de verdad de datos y forge-front su cliente, mientras foundly-pos es una aplicación POS local-first independiente.",
+  "repositories": [
+    {
+      "id": "forge-backend",
+      "name": "forge-backend",
+      "path": "sidecars/forge-backend",
+      "absolutePath": "/Users/raulgomez/Desktop/brain-corp/sidecars/forge-backend",
+      "remote": "git@github.com:Forge-Aetheria/forge-backend.git",
+      "type": "backend-api",
+      "stack": [
+        "NestJS 11",
+        "GraphQL (Apollo Server, code-first híbrido)",
+        "Prisma ORM 7",
+        "PostgreSQL (Supabase)",
+        "Redis / Dragonfly",
+        "Supabase Auth"
+      ],
+      "entrypoint": "src/main.ts",
+      "role": "API GraphQL multi-tenant del ERP FORGE; fuente de verdad de datos y reglas de negocio.",
+      "port": 4000,
+      "graphqlEndpoint": "http://localhost:4000/graphql",
+      "database": {
+        "provider": "postgresql",
+        "managedBy": "Supabase",
+        "schemaFile": "sidecars/forge-backend/prisma/schema.prisma",
+        "schemaAbsolutePath": "/Users/raulgomez/Desktop/brain-corp/sidecars/forge-backend/prisma/schema.prisma",
+        "migrationsDir": "sidecars/forge-backend/prisma/migrations",
+        "generatedGraphqlSchema": "sidecars/forge-backend/schema.gql",
+        "modelCount": 81
+      },
+      "domains": [
+        "tenant",
+        "iam",
+        "auth",
+        "inventory",
+        "purchases",
+        "sales",
+        "cash-register",
+        "contacts",
+        "accounting",
+        "health"
+      ],
+      "specs": {
+        "directory": "sidecars/forge-backend/.spec",
+        "layout": "feature-folder",
+        "file": "spec.md",
+        "naming": "<feature-number>-<slug>",
+        "conventions": [
+          "<ticket-id>-<slug>/spec.md",
+          "<ticket-id>-<slug>/plan.md",
+          "<ticket-id>-<slug>/tasks.md",
+          "<ticket-id>-<slug>/research.md",
+          "<ticket-id>-<slug>/data-model.md",
+          "<ticket-id>-<slug>/quickstart.md"
+        ],
+        "template": "sidecars/forge-backend/.specify/templates/spec-template.md",
+        "constitution": "sidecars/forge-backend/.spec/constitution.md",
+        "specKitScript": "sidecars/forge-backend/.specify/scripts/bash/create-new-feature.sh",
+        "namingSource": "spec-kit-script",
+        "ticketReference": "El ID del ticket (TICK-XXX) se documenta dentro del spec.md, no en el nombre de la carpeta."
+      }
+    },
+    {
+      "id": "forge-front",
+      "name": "forge-front",
+      "path": "sidecars/forge-front",
+      "absolutePath": "/Users/raulgomez/Desktop/brain-corp/sidecars/forge-front",
+      "remote": "git@github.com:Forge-Aetheria/forge-front.git",
+      "type": "frontend-web",
+      "stack": [
+        "Next.js 16 (App Router)",
+        "React 19",
+        "MUI 7 (Vuexy admin template)",
+        "Tailwind CSS 4",
+        "TypeScript",
+        "GraphQL nativo (fetch)"
+      ],
+      "entrypoint": "src/app/layout.tsx",
+      "role": "Panel administrativo web del ERP FORGE; consume la API GraphQL de forge-backend.",
+      "port": 3000,
+      "apiClient": "src/libs/graphqlClient.ts",
+      "apiEnvVar": "NEXT_PUBLIC_GRAPHQL_ENDPOINT",
+      "domains": [
+        "home",
+        "inventory",
+        "purchases",
+        "sales",
+        "pos",
+        "contacts",
+        "accounting",
+        "settings",
+        "profile",
+        "auth"
+      ],
+      "specs": {
+        "directory": "sidecars/forge-front/docs/specs",
+        "layout": "flat",
+        "file": "<ticket-id>-<slug>.spec.md",
+        "naming": "<ticket-id>-<slug>",
+        "conventions": [
+          "<ticket-id>-<slug>.spec.md"
+        ],
+        "constitution": "sidecars/forge-front/constitution.md",
+        "namingSource": "ticket-id"
+      }
+    },
+    {
+      "id": "foundly-pos",
+      "name": "foundly-pos",
+      "path": "sidecars/foundly-pos",
+      "absolutePath": "/Users/raulgomez/Desktop/brain-corp/sidecars/foundly-pos",
+      "remote": "git@github.com:Forge-Aetheria/foundly-pos.git",
+      "type": "mobile-app-local-first",
+      "stack": [
+        "React Native 0.86",
+        "Expo 57 / expo-router",
+        "Gluestack UI",
+        "Drizzle ORM",
+        "SQLite (expo-sqlite)",
+        "Zustand",
+        "TypeScript"
+      ],
+      "entrypoint": "index.ts",
+      "role": "Punto de venta (POS) local-first para pequeños negocios; opera offline contra SQLite y no depende de forge-backend.",
+      "database": {
+        "provider": "sqlite",
+        "schemaFile": "sidecars/foundly-pos/src/db/schema.ts",
+        "drizzleConfig": "sidecars/foundly-pos/drizzle.config.ts",
+        "migrationsDir": "sidecars/foundly-pos/drizzle",
+        "databaseFile": "foundly_inventory.db",
+        "schemaVersion": 17,
+        "tableCount": 16
+      },
+      "externalIntegrations": [
+        "https://ve.dolarapi.com/v1/dolares/oficial (tasa BCV)",
+        "https://p2p.binance.com (tasa USDT)"
+      ],
+      "domains": [
+        "dashboard",
+        "inventory",
+        "pos",
+        "receivables",
+        "cash",
+        "backup",
+        "settings"
+      ],
+      "specs": {
+        "directory": "sidecars/foundly-pos/specs",
+        "layout": "feature-folder",
+        "file": "spec.md",
+        "naming": "<feature-number>-<slug>",
+        "conventions": [
+          "<ticket-id>-<slug>/spec.md",
+          "<ticket-id>-<slug>/plan.md",
+          "<ticket-id>-<slug>/tasks.md",
+          "<ticket-id>-<slug>/research.md",
+          "<ticket-id>-<slug>/data-model.md",
+          "<ticket-id>-<slug>/quickstart.md"
+        ],
+        "template": "sidecars/foundly-pos/.specify/templates/spec-template.md",
+        "constitution": "sidecars/foundly-pos/constitution.md",
+        "specKitScript": "sidecars/foundly-pos/.specify/scripts/bash/create-new-feature.sh",
+        "namingSource": "spec-kit-script",
+        "ticketReference": "El ID del ticket (TICK-XXX) se documenta dentro del spec.md, no en el nombre de la carpeta."
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": "forge-front",
+      "to": "forge-backend",
+      "type": "http-graphql",
+      "protocol": "GraphQL over HTTPS",
+      "endpoint": "NEXT_PUBLIC_GRAPHQL_ENDPOINT (default http://localhost:4000/graphql)",
+      "auth": "Bearer JWT (Supabase) + header x-tenant-id",
+      "description": "forge-front ejecuta queries/mutations GraphQL contra forge-backend; inyecta token de sesión y tenant."
+    },
+    {
+      "from": "forge-backend",
+      "to": "Supabase PostgreSQL",
+      "type": "database",
+      "protocol": "PostgreSQL (pg / Prisma adapter)",
+      "description": "Persistencia principal vía Prisma sobre PostgreSQL gestionado en Supabase, con migraciones versionadas."
+    },
+    {
+      "from": "forge-backend",
+      "to": "Supabase Auth",
+      "type": "auth-provider",
+      "protocol": "Supabase JS SDK",
+      "description": "Autenticación, sesiones y almacenamiento de avatares."
+    },
+    {
+      "from": "forge-backend",
+      "to": "Redis / Dragonfly",
+      "type": "cache",
+      "protocol": "Redis",
+      "description": "Cache de entitlements y permisos IAM."
+    },
+    {
+      "from": "foundly-pos",
+      "to": "SQLite local",
+      "type": "database-embedded",
+      "protocol": "expo-sqlite + Drizzle",
+      "description": "Persistencia local en el dispositivo; sin backend propio ni acoplamiento con forge."
+    },
+    {
+      "from": "foundly-pos",
+      "to": "APIs externas de tipo de cambio",
+      "type": "http-rest",
+      "description": "Consulta tasas BCV/Binance; único tráfico de red de la app."
+    }
+  ],
+  "topology": {
+    "pattern": "monorepo-contenedor con git submodules",
+    "gitmodules": ".gitmodules",
+    "groups": [
+      {
+        "name": "forge",
+        "description": "ERP cloud multi-tenant (backend + panel web) acoplado vía GraphQL.",
+        "members": [
+          "forge-backend",
+          "forge-front"
+        ]
+      },
+      {
+        "name": "foundly",
+        "description": "POS móvil local-first, autónomo y sin dependencia del ERP.",
+        "members": [
+          "foundly-pos"
+        ]
+      }
+    ]
+  },
+  "rootOrchestration": {
+    "enabled": true,
+    "root": "/Users/raulgomez/Desktop/brain-corp",
+    "rule": "Todos los comandos y skills operan desde la raíz de brain-corp. Las rutas de los sidecars se resuelven desde config/system-map.json; nunca se requiere cambiar de directorio.",
+    "pathResolution": "repositories[].path (relativo a la raíz) → sidecars/<repo>",
+    "neverCd": true
+  },
+  "domains": {
+    "forge": [
+      "tenant",
+      "iam",
+      "auth",
+      "inventory",
+      "purchases",
+      "sales",
+      "cash-register",
+      "contacts",
+      "accounting"
+    ],
+    "foundly": [
+      "dashboard",
+      "inventory",
+      "pos",
+      "receivables",
+      "cash",
+      "backup",
+      "settings"
+    ]
+  },
+  "notes": [
+    "El esquema de base de datos relacional/Prisma del ecosistema vive únicamente en forge-backend/prisma/schema.prisma.",
+    "foundly-pos usa Drizzle ORM sobre SQLite, no Prisma; su esquema está en src/db/schema.ts.",
+    "forge-backend genera schema.gql a partir de decoradores NestJS; no es la fuente de verdad estructural.",
+    ".gitmodules declara una entrada redundante 'sidecars/foundly-post' apuntando al mismo remoto que foundly-pos."
+  ]
+}
