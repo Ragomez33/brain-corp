@@ -1,6 +1,33 @@
 node_modules/
 .env
+.env.*
+!.env.example
 .brainrc.json
 .agents/watch.log
 .agents/tickets/.sanity-check.json
 .DS_Store
+
+# Logs y cobertura
+*.log
+logs/
+coverage/
+
+# Builds y cachés
+dist/
+build/
+out/
+.next/
+.expo/
+.turbo/
+.cache/
+
+# Bases de datos locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Dependencias locales de opencode
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+.opencode/bun.lock
