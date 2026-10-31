@@ -1,0 +1,6 @@
+node_modules/
+.env
+.brainrc.json
+.agents/watch.log
+.agents/tickets/.sanity-check.json
+.DS_Store
