@@ -18,20 +18,20 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** ejecutando un san
 
 1. Ejecuta `node scripts/sanity-check.js --write --json` y conserva su resultado como validación estructural base (IDs, campos, estados, dependencias, ciclos, duplicados, reglas UI→Backend).
 2. Lee todos los tickets de `.agents/tickets/backlog/`. Revisa también `in-analysis/`, `ready/` y `done/` para resolver dependencias y detectar duplicados contra tickets ya existentes.
-3. Lee `config/system-map.json` y localiza los esquemas reales según el dominio de cada ticket:
-   - `sidecars/forge-backend/prisma/schema.prisma` y `sidecars/forge-backend/schema.gql`.
-   - `sidecars/forge-front/src/graphql/`, `src/services/`, `src/views/` y `src/types/`.
-   - `sidecars/foundly-pos/src/db/schema.ts`, `drizzle/` y `src/modules/`.
+3. Lee `config/system-map.json` y localiza los esquemas, contratos y consumidores reales de cada sidecar usando `repositories[].path`, `stack`, `domains` y `specs`:
+   - En sidecars `provider`: esquemas de datos, migraciones, endpoints, resolvers o servicios.
+   - En sidecars `client`: clientes de API, servicios, vistas y tipos.
+   - En sidecars `standalone`: esquemas locales, módulos y flujos propios.
 4. Si `$ARGUMENTS` contiene IDs (`TICK-XXX`), limita la auditoría a esos tickets y a sus dependencias directas.
 
 ## Paso 2 — Análisis cruzado
 
 Para cada ticket verifica, con evidencia de archivos y nombres reales:
 
-1. **Contradicciones Frontend ↔ Backend.** Compara lo que un ticket de `forge-front` afirma sobre queries, mutaciones, campos, enums o `Decimal` contra `schema.gql`, `schema.prisma` y los resolvers. Marca contradicción cuando el front asuma un contrato que el backend no expone o cuando dos tickets describan el mismo contrato de forma incompatible.
-2. **Dependencias UI → API.** Si un ticket de `forge-front` o `foundly-pos` requiere crear, modificar o exponer una query/mutación/endpoint/resolver/migración en `forge-backend`, debe declarar en `dependencies` al menos un ticket de `forge-backend` o `shared` que cubra ese cambio. Si no existe, crea el ticket de backend faltante o añade la dependencia al ticket existente.
+1. **Contradicciones Client ↔ Provider.** Compara lo que un ticket de un sidecar `client` afirma sobre queries, mutaciones, campos, enums o tipos contra el esquema, contrato y código real del sidecar `provider`. Marca contradicción cuando el client asuma un contrato que el provider no expone o cuando dos tickets describan el mismo contrato de forma incompatible.
+2. **Dependencias Client → API.** Si un ticket de un sidecar `client` o `standalone` requiere crear, modificar o exponer una query, mutación, endpoint, resolver o migración en un sidecar `provider`, debe declarar en `dependencies` al menos un ticket de ese `provider` o `shared`. Si no existe, crea el ticket del provider faltante o añade la dependencia al ticket existente.
 3. **Redundancias y duplicados.** Detecta tickets con el mismo hallazgo, mismo alcance o títulos equivalentes. Si dos tickets cubren el mismo problema, conserva el más completo, integra la evidencia útil del otro y elimina el duplicado.
-4. **Coherencia de estado y dominio.** `status` debe coincidir con la carpeta; `target_domain` debe ser uno de `forge-backend`, `forge-front`, `foundly-pos` o `shared`; `dependencies` solo puede referenciar IDs existentes y sin ciclos.
+4. **Coherencia de estado y dominio.** `status` debe coincidir con la carpeta; `target_domain` debe ser un id registrado en `config/system-map.json` o `shared`; `dependencies` solo puede referenciar IDs existentes y sin ciclos.
 5. **Formato del cuerpo.** Deben existir, en orden, `## Contexto / Hallazgo`, `## Requerimientos Técnicos` y `## Impacto en la Arquitectura`.
 6. **Valor del ticket.** Elimina tickets especulativos sin evidencia verificable o cuyo contenido ya esté implementado en el código actual. No elimines tickets con `github_issue` ya creado: en ese caso corrige el ticket y reporta que el issue debe editarse o cerrarse manualmente.
 

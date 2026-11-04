@@ -254,7 +254,7 @@ get_invoke_separator() {
         # (exit 49). An availability-gated branch would pick python3, swallow
         # its failure, and — because this function historically had no text
         # fallback — silently return "." even for `-`-separator integrations
-        # (e.g. forge, cline), yielding wrong command hints (issue #3304).
+        # (e.g. cline), yielding wrong command hints (issue #3304).
         if command -v jq >/dev/null 2>&1; then
             local jq_separator
             if jq_separator=$(jq -r '(.default_integration // .integration // "") as $k | if $k == "" then "." else (.integration_settings[$k].invoke_separator // ".") end' "$integration_json" 2>/dev/null); then

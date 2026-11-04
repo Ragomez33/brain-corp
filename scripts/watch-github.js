@@ -4,7 +4,7 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
 
-const ROOT_DIR = path.resolve(__dirname, '..')
+const ROOT_DIR = process.cwd()
 const SYNC_PULL = path.join(__dirname, 'sync-pull.js')
 const NORMALIZE = path.join(__dirname, 'normalize-ticket.js')
 

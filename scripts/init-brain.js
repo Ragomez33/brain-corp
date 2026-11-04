@@ -4,8 +4,18 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { spawn, spawnSync } = require('node:child_process')
 const readline = require('node:readline/promises')
+const { buildCommand, buildNodeCommand } = require('./lib/shell')
+const { confirm, isInteractiveTerminal, promptSelection } = require('./lib/prompts')
+const { provisionAgentAssets } = require('./lib/agent-provision')
+const {
+  getRegisteredRepositories,
+  readSystemMap,
+  systemMapPath
+} = require('./lib/system-map')
+const { runSetupWizard, syncSpecifyConfig } = require('./setup-wizard')
 
-const ROOT_DIR = path.resolve(__dirname, '..')
+// El workspace es siempre el directorio desde el que se invoca el CLI.
+const ROOT_DIR = process.cwd()
 const CONFIG_PATH = path.join(ROOT_DIR, '.brainrc.json')
 const SYNC_PULL_PATH = path.join(__dirname, 'sync-pull.js')
 const WATCH_PATH = path.join(__dirname, 'watch-github.js')
@@ -13,7 +23,9 @@ const WATCH_LOG = '.agents/watch.log'
 
 const AGENTS = [
   { value: 'opencode', label: 'opencode' },
+  { value: 'claude', label: 'Claude Code' },
   { value: 'cursor', label: 'Cursor' },
+  { value: 'antigravity', label: 'Antigravity' },
   { value: 'custom', label: 'Personalizado' }
 ]
 
@@ -23,7 +35,10 @@ function fail(message) {
 }
 
 function runGh(args, { allowFailure = false } = {}) {
-  const result = spawnSync('gh', args, { encoding: 'utf8' })
+  const result = spawnSync(buildCommand('gh', args), {
+    encoding: 'utf8',
+    shell: true
+  })
 
   if (result.error) {
     if (allowFailure) return null
@@ -71,6 +86,12 @@ function writeConfig(config) {
   fs.writeFileSync(CONFIG_PATH, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
 }
 
+function hasValidSidecars(map) {
+  return getRegisteredRepositories(map).some(
+    repository => repository && repository.id && repository.path
+  )
+}
+
 function parseProjectInput(input) {
   const value = input.trim()
 
@@ -99,6 +120,28 @@ async function ask(rl, question, defaultValue = '') {
 }
 
 async function chooseAgent(rl, defaultValue) {
+  const defaultIndex = Math.max(
+    0,
+    AGENTS.findIndex(agent => agent.value === defaultValue)
+  )
+
+  if (isInteractiveTerminal()) {
+    const selected = await promptSelection(rl, {
+      message: 'Motor de agente CLI para esta sesión',
+      choices: AGENTS.map(agent => ({ name: agent.label, value: agent.value })),
+      pageSize: AGENTS.length,
+      multiple: false,
+      initialCursor: defaultIndex
+    })
+
+    const value = selected ? selected.value : defaultValue || 'opencode'
+
+    if (value !== 'custom') return value
+
+    const custom = await ask(rl, 'Nombre del agente personalizado', 'opencode')
+    return custom || 'opencode'
+  }
+
   console.log('\nMotor de agente CLI para esta sesión:')
 
   AGENTS.forEach((agent, index) => {
@@ -106,9 +149,7 @@ async function chooseAgent(rl, defaultValue) {
     console.log(`  ${index + 1}. ${agent.label}${isDefault}`)
   })
 
-  const defaultIndex = AGENTS.findIndex(agent => agent.value === defaultValue)
-  const answer = await ask(rl, 'Selecciona una opción', String(defaultIndex >= 0 ? defaultIndex + 1 : 1))
-
+  const answer = await ask(rl, 'Selecciona una opción', String(defaultIndex + 1))
   const index = Number(answer)
 
   if (Number.isInteger(index) && index >= 1 && index <= AGENTS.length) {
@@ -160,9 +201,10 @@ async function askProject(rl, githubUser) {
 function runSyncPull() {
   console.log('\nSincronizando tickets desde GitHub (sync-pull)...')
 
-  const result = spawnSync(process.execPath, [SYNC_PULL_PATH], {
+  const result = spawnSync(buildNodeCommand(SYNC_PULL_PATH), {
     cwd: ROOT_DIR,
-    encoding: 'utf8'
+    encoding: 'utf8',
+    shell: true
   })
 
   if (result.stdout) process.stdout.write(result.stdout)
@@ -199,8 +241,11 @@ async function maybeStartWatcher(rl, config) {
     config.lastSession.watch = false
   }
 
-  const answer = await ask(rl, '\n¿Activar watcher en tiempo real (cada 45s)? (s/N)', 'n')
-  const enabled = ['s', 'si', 'sí', 'y', 'yes'].includes(answer.toLowerCase())
+  const enabled = await confirm(
+    rl,
+    '\n¿Activar watcher en tiempo real (cada 45s)?',
+    false
+  )
 
   const now = new Date().toISOString()
   config.lastSession = {
@@ -218,15 +263,13 @@ async function maybeStartWatcher(rl, config) {
 
   fs.mkdirSync(path.join(ROOT_DIR, '.agents'), { recursive: true })
 
-  const child = spawn(
-    process.execPath,
-    [WATCH_PATH, '--log', WATCH_LOG],
-    {
-      cwd: ROOT_DIR,
-      detached: true,
-      stdio: 'ignore'
-    }
-  )
+  const child = spawn(buildNodeCommand(WATCH_PATH, ['--log', WATCH_LOG]), {
+    cwd: ROOT_DIR,
+    detached: true,
+    stdio: 'ignore',
+    // shell: true permite lanzar node y sus wrappers correctamente en Windows.
+    shell: true
+  })
 
   child.unref()
 
@@ -342,9 +385,12 @@ function launchAgent(config) {
       stopWatcher(config)
     }
 
-    const child = spawn(agent, [], {
-      cwd: ROOT_DIR,
-      stdio: 'inherit'
+    const child = spawn(buildCommand(agent), {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+      // shell: true permite resolver los wrappers .cmd/.bat de Windows
+      // (opencode.cmd, agy.cmd, etc.) y evita el error ENOENT.
+      shell: true
     })
 
     const removeSignalHandlers = () => {
@@ -399,10 +445,63 @@ async function main() {
   let config
 
   try {
+    const manualSetup = process.argv.includes('--manual')
+    const mapPath = systemMapPath(ROOT_DIR)
+    let systemMap = readSystemMap(ROOT_DIR)
+    const configured = fs.existsSync(mapPath) && hasValidSidecars(systemMap)
+
+    if (!configured) {
+      console.log(
+        '[init-brain] Workspace sin configurar: no hay config/system-map.json con sidecars válidos.'
+      )
+      console.log('[init-brain] Iniciando setup wizard en el directorio actual...')
+
+      await runSetupWizard({
+        rl,
+        rootDir: ROOT_DIR,
+        map: systemMap,
+        manual: manualSetup
+      })
+
+      systemMap = readSystemMap(ROOT_DIR)
+
+      if (!hasValidSidecars(systemMap)) {
+        throw new Error(
+          'El workspace sigue sin sidecars configurados. Ejecuta "brain setup" en este directorio antes de iniciar la sesión.'
+        )
+      }
+    }
+
     runSyncPull()
 
     const existing = readConfig()
     config = existing ? await sessionMenu(rl, existing) : await onboard(rl)
+
+    const provisioned = provisionAgentAssets({
+      agent: config.defaultAgent,
+      workspaceDir: ROOT_DIR
+    })
+
+    console.log(
+      `[init-brain] Assets del agente verificados: ${provisioned.created.length} archivo(s) nuevos, ${provisioned.skipped.length} ya existentes.`
+    )
+    console.log(
+      `[init-brain] Prompts/skills/spec-kit desplegados en ${ROOT_DIR}.`
+    )
+
+    const specifyPath = syncSpecifyConfig(
+      ROOT_DIR,
+      getRegisteredRepositories(readSystemMap(ROOT_DIR))
+    )
+
+    if (specifyPath) {
+      console.log(
+        `[init-brain] Enrutamiento spec-kit verificado en ${path.relative(
+          ROOT_DIR,
+          specifyPath
+        )}.`
+      )
+    }
 
     await maybeStartWatcher(rl, config)
   } finally {

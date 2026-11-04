@@ -13,10 +13,10 @@ const {
   writeTicket,
   updateFrontmatter
 } = require('./lib/tickets')
+const { getTargetDomains } = require('./lib/system-map')
 
 const SYSTEM_MAP_PATH = path.join(ROOT_DIR, 'config', 'system-map.json')
 const BRAINRC_PATH = path.join(ROOT_DIR, '.brainrc.json')
-const ALLOWED_DOMAINS = new Set(['forge-backend', 'forge-front', 'foundly-pos', 'shared'])
 
 function fail(message) {
   console.error(`[hotfix] ${message}`)
@@ -66,8 +66,7 @@ function parseArgs(argv) {
   }
 
   if (!args.title) fail('Falta --title (título del hotfix).')
-  if (!args.domain) fail('Falta --domain (forge-backend | forge-front | foundly-pos | shared).')
-  if (!ALLOWED_DOMAINS.has(args.domain)) fail(`Dominio inválido: ${args.domain}.`)
+  if (!args.domain) fail('Falta --domain (id de sidecar registrado o "shared").')
   if (!args.module) fail('Falta --module (módulo del commit, ej. inventory).')
   if (!args.specImpact) {
     fail('Falta --spec-impact. Usa "none" o una referencia a la enmienda de la spec/tasks.md.')
@@ -187,6 +186,14 @@ function buildTicketBody({ title, context, specImpact, module, domain, repoRelat
 function main() {
   const args = parseArgs(process.argv.slice(2))
   const systemMap = loadSystemMap()
+  const allowedDomains = getTargetDomains(systemMap)
+
+  if (!allowedDomains.has(args.domain)) {
+    fail(
+      `Dominio inválido: ${args.domain}. Registra el sidecar en config/system-map.json o usa uno de: ${[...allowedDomains].join(', ')}.`
+    )
+  }
+
   const repo = resolveRepoPath({
     domain: args.domain,
     repoArg: args.repo,

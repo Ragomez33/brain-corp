@@ -9,7 +9,12 @@ const shouldWrite = process.argv.includes('--write')
 const result = runSanityCheck()
 
 if (shouldWrite) {
-  const ledgerPath = path.resolve(__dirname, '..', '.agents', 'tickets', '.sanity-check.json')
+  const ledgerPath = path.resolve(
+    process.cwd(),
+    '.agents',
+    'tickets',
+    '.sanity-check.json'
+  )
   const ledger = {
     checked_at: result.checked_at,
     source: 'sanity-check',
