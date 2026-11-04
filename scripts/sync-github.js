@@ -6,15 +6,18 @@ const { execFileSync } = require('node:child_process')
 const matter = require('gray-matter')
 const { runSanityCheck } = require('./lib/sanity')
 
-const ROOT_DIR = path.resolve(__dirname, '..')
+const ROOT_DIR = process.cwd()
 const TICKETS_DIR = path.join(ROOT_DIR, '.agents', 'tickets', 'backlog')
 const BRAINRC_PATH = path.join(ROOT_DIR, '.brainrc.json')
 
-const LABEL_COLORS = {
-  'forge-backend': '1d76db',
-  'forge-front': '0e8a16',
-  'foundly-pos': 'd93f0b',
-  shared: '5319e7'
+function labelColor(label) {
+  let hash = 0
+
+  for (const character of String(label || '')) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0
+  }
+
+  return (hash & 0xffffff).toString(16).padStart(6, '0')
 }
 
 function fail(message) {
@@ -134,7 +137,7 @@ function buildTitle(data, fileName) {
 }
 
 function ensureLabel(label) {
-  const color = LABEL_COLORS[label] || 'ededed'
+  const color = labelColor(label)
 
   try {
     runGh(['label', 'create', label, '--color', color, '--force'])

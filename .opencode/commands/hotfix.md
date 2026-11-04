@@ -19,7 +19,7 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** ejecutando el flu
 Necesitas:
 
 - `--title`: título corto y descriptivo del hotfix.
-- `--domain`: `forge-backend`, `forge-front`, `foundly-pos` o `shared`.
+- `--domain`: id de un sidecar registrado en `config/system-map.json` o `shared`.
 - `--module`: módulo para el commit, por ejemplo `inventory`.
 - `--spec-impact`: `none` si no altera ninguna spec gobernante, o una referencia a la enmienda en `tasks.md`/spec.
 - `--repo`: obligatorio si `--domain` es `shared`; acepta un id de sidecar o `root`.
@@ -57,7 +57,7 @@ El script:
 
 Si el script falla al crear la rama o publicar el issue, reporta el error y no continúes como si hubiera quedado listo.
 
-Después de crear el ticket, ejecuta `node scripts/sanity-check.js --write` y corrige cualquier error bloqueante (por ejemplo, un hotfix de frontend que requiera un cambio de API sin ticket de backend asociado).
+Después de crear el ticket, ejecuta `node scripts/sanity-check.js --write` y corrige cualquier error bloqueante (por ejemplo, un hotfix de un sidecar `client` que requiera un cambio de API sin ticket de un sidecar `provider` asociado).
 
 ## Paso 4 — Preparar la entrega
 

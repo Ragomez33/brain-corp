@@ -13,12 +13,12 @@ Ejecuta este protocolo en orden. **Modo Orquestador Raíz:** trabaja siempre des
 
 2. **Consulta el mapa del ecosistema.** Lee `config/system-map.json` y usa su topología, repositorios, dominios y relaciones como punto de partida. Si el tema no está cubierto por el mapa, indícalo y amplía la inspección al código real.
 
-3. **Ejecuta el análisis en los sidecars.** Inspecciona el código de `sidecars/forge-backend`, `sidecars/forge-front` y `sidecars/foundly-pos` según corresponda al tema solicitado. Contrasta las tres capas: esquema de datos → contrato GraphQL → consumo en front/app. Busca específicamente:
-   - Modelos Prisma sin query/mutación GraphQL expuesta.
-   - Queries/mutaciones sin resolver, servicio o validación.
-   - Campos, enums o tipos incoherentes entre esquema y contrato GraphQL.
-   - Vistas o servicios del front sin soporte real en backend.
-   - Vacíos de integración entre Foundly (Drizzle/SQLite local-first) y Forge (Prisma/PostgreSQL multi-tenant), incluidas diferencias de dinero (`Decimal` vs centavos enteros).
+3. **Ejecuta el análisis en los sidecars.** Inspecciona el código de los sidecars registrados en `config/system-map.json` que correspondan al tema solicitado. Contrasta las capas relevantes según su stack: esquema de datos → contrato/API → consumo en el cliente. Busca específicamente:
+   - Modelos o entidades sin endpoint, query, mutación o servicio expuesto.
+   - Endpoints, queries o mutaciones sin implementación, validación o consumidor.
+   - Campos, enums o tipos incoherentes entre esquema y contrato.
+   - Vistas o servicios del cliente sin soporte real en el provider.
+   - Vacíos de integración entre sidecars `provider` y `client`, incluidas diferencias de modelos, tipos y representación de datos.
    - Funcionalidad documentada o esperada sin implementación.
    Cita rutas de archivo y nombres reales de modelos/campos como evidencia.
 
@@ -31,7 +31,7 @@ Ejecuta este protocolo en orden. **Modo Orquestador Raíz:** trabaja siempre des
    id: "TICK-XXX"
    title: "Título descriptivo"
    author: "Brain-Corp Analyst"
-   target_domain: "forge-backend | forge-front | foundly-pos | shared"
+   target_domain: "<id-de-sidecar-registrado> | shared"
    status: "backlog"
    created_at: "YYYY-MM-DD"
    dependencies: []

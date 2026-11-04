@@ -1,9 +1,2 @@
-[submodule "sidecars/forge-backend"]
-	path = sidecars/forge-backend
-	url = git@github.com:Forge-Aetheria/forge-backend.git
-[submodule "sidecars/forge-front"]
-	path = sidecars/forge-front
-	url = git@github.com:Forge-Aetheria/forge-front.git
-[submodule "sidecars/foundly-pos"]
-	path = sidecars/foundly-pos
-	url = git@github.com:Forge-Aetheria/foundly-pos.git
+# Sin submodules registrados.
+# Añade aquí los sidecars que quieras versionar como submodules.

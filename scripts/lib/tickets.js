@@ -1,8 +1,10 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const matter = require('gray-matter')
+const { getRegisteredRepositories, readSystemMap } = require('./system-map')
 
-const ROOT_DIR = path.resolve(__dirname, '..', '..')
+// La raíz del workspace es el cwd del usuario; los scripts viven en el paquete.
+const ROOT_DIR = process.cwd()
 const TICKETS_DIR = path.join(ROOT_DIR, '.agents', 'tickets')
 const STATUS_DIRS = ['backlog', 'in-analysis', 'ready', 'done']
 const REQUIRED_FIELDS = [
@@ -182,70 +184,46 @@ function moveTicket(filePath, targetStatus) {
 
 function inferTargetDomain(text) {
   const normalized = String(text || '').toLowerCase()
+  const repositories = getRegisteredRepositories(readSystemMap(ROOT_DIR))
 
-  const signals = {
-    'forge-backend': [
-      'prisma',
-      'graphql',
-      'resolver',
-      'mutación',
-      'mutacion',
-      'mutation',
-      'endpoint',
-      'nestjs',
-      'backend',
-      'postgres',
-      'schema.prisma',
-      'migración',
-      'migracion',
-      'dto',
-      'entidad'
-    ],
-    'forge-front': [
-      'next.js',
-      'nextjs',
-      'react',
-      'mui',
-      'componente',
-      'pantalla',
-      'frontend',
-      'vista',
-      'página',
-      'pagina',
-      'formulario',
-      'tailwind',
-      'cliente graphql',
-      'dashboard web'
-    ],
-    'foundly-pos': [
-      'expo',
-      'react native',
-      'sqlite',
-      'drizzle',
-      'punto de venta',
-      'pos',
-      'caja',
-      'cobro',
-      'gluestack',
-      'android',
-      'ios',
-      'local-first',
-      'offline',
-      'inventario local'
+  if (repositories.length === 0) return 'shared'
+
+  const scores = new Map()
+
+  for (const repository of repositories) {
+    const id = String(repository.id || repository.name || '').toLowerCase()
+    if (!id) continue
+
+    const values = [
+      repository.id,
+      repository.name,
+      repository.type,
+      ...(Array.isArray(repository.domains) ? repository.domains : []),
+      ...(Array.isArray(repository.keywords) ? repository.keywords : []),
+      ...(Array.isArray(repository.stack) ? repository.stack : [])
     ]
-  }
 
-  const scores = Object.fromEntries(Object.keys(signals).map(key => [key, 0]))
+    const keywords = [
+      ...new Set(
+        values
+          .filter(Boolean)
+          .map(value => String(value).toLowerCase().trim())
+          .filter(value => value.length >= 3)
+      )
+    ]
 
-  for (const [domain, keywords] of Object.entries(signals)) {
+    let score = normalized.includes(id) ? 3 : 0
+
     for (const keyword of keywords) {
-      if (normalized.includes(keyword)) scores[domain] += 1
+      if (normalized.includes(keyword)) score += 1
     }
+
+    scores.set(id, score)
   }
 
-  const entries = Object.entries(scores).sort((a, b) => b[1] - a[1])
-  const [bestDomain, bestScore] = entries[0]
-  const [, secondScore] = entries[1]
+  const entries = [...scores.entries()].sort((a, b) => b[1] - a[1])
+  const [bestDomain, bestScore] = entries[0] || ['shared', 0]
+  const [, secondScore] = entries[1] || ['shared', 0]
 
   if (bestScore === 0) return 'shared'
   if (bestScore === secondScore) return 'shared'

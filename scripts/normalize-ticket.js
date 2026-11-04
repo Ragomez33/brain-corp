@@ -13,16 +13,26 @@ const {
   writeTicket,
   moveTicket
 } = require('./lib/tickets')
+const { getRegisteredRepositories, readSystemMap } = require('./lib/system-map')
 
-const DOMAIN_IMPACT = {
-  'forge-backend':
-    'API GraphQL/NestJS, servicios de dominio, Prisma/PostgreSQL y migraciones.',
-  'forge-front':
-    'panel Next.js, componentes MUI, servicios GraphQL y flujos de UI.',
-  'foundly-pos':
-    'app Expo/React Native, SQLite/Drizzle, stores y flujos locales del POS.',
-  shared:
-    'contratos compartidos entre sidecars, mapeo de datos y posibles integraciones Forge ↔ Foundly.'
+function describeDomainImpact(domain) {
+  if (domain === 'shared') {
+    return 'contratos compartidos entre sidecars, mapeo de datos y posibles integraciones.'
+  }
+
+  const repository = getRegisteredRepositories(readSystemMap(ROOT_DIR)).find(
+    item => item.id === domain
+  )
+
+  if (!repository) return `repositorio \`${domain}\`.`
+
+  const role = repository.role ? ` (${repository.role})` : ''
+  const stack =
+    Array.isArray(repository.stack) && repository.stack.length > 0
+      ? `: ${repository.stack.join(', ')}`
+      : ''
+
+  return `repositorio \`${repository.name || repository.id}\`${role}${stack}.`
 }
 
 function fail(message) {
@@ -129,8 +139,8 @@ ${context}
 ## Impacto en la Arquitectura
 
 - Repositorio objetivo: \`${domain}\`.
-- Capas afectadas: ${DOMAIN_IMPACT[domain] || DOMAIN_IMPACT.shared}
-- Revisar dependencias con otros sidecars y el impacto en multi-tenancy y sincronización.
+- Capas afectadas: ${describeDomainImpact(domain)}
+- Revisar dependencias con otros sidecars y el impacto en aislamiento, datos y sincronización.
 `
 }
 

@@ -1,0 +1,134 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-11-03",
+  "root": ".",
+  "description": "Ejemplo de referencia: mapa de topología de un ecosistema brain-corp con sidecars provider, client y standalone. Copia este archivo a system-map.json si quieres partir de una topología ya poblada.",
+  "repositories": [
+    {
+      "id": "example-api",
+      "name": "example-api",
+      "path": "sidecars/example-api",
+      "remote": "git@github.com:example-org/example-api.git",
+      "type": "backend-api",
+      "role": "provider",
+      "description": "API que expone datos y reglas de negocio a otros sidecars.",
+      "port": 4000,
+      "domains": [
+        "catalog",
+        "accounts",
+        "reports"
+      ],
+      "specs": {
+        "directory": "sidecars/example-api/specs",
+        "layout": "feature-folder",
+        "file": "spec.md",
+        "naming": "<feature-number>-<slug>",
+        "template": null,
+        "constitution": "sidecars/example-api/constitution.md",
+        "specKitScript": null
+      }
+    },
+    {
+      "id": "example-web",
+      "name": "example-web",
+      "path": "sidecars/example-web",
+      "remote": "git@github.com:example-org/example-web.git",
+      "type": "frontend-web",
+      "role": "client",
+      "description": "Aplicación web que consume la API del sidecar provider.",
+      "port": 3000,
+      "apiEnvVar": "NEXT_PUBLIC_API_ENDPOINT",
+      "domains": [
+        "home",
+        "catalog",
+        "accounts",
+        "settings"
+      ],
+      "specs": {
+        "directory": "sidecars/example-web/specs",
+        "layout": "flat",
+        "file": "<ticket-id>-<slug>.spec.md",
+        "naming": "<ticket-id>-<slug>",
+        "template": null,
+        "constitution": "sidecars/example-web/constitution.md",
+        "specKitScript": null
+      }
+    },
+    {
+      "id": "example-app",
+      "name": "example-app",
+      "path": "sidecars/example-app",
+      "remote": "git@github.com:example-org/example-app.git",
+      "type": "standalone-app",
+      "role": "standalone",
+      "description": "Aplicación autónoma que no depende de otros sidecars.",
+      "domains": [
+        "dashboard",
+        "settings",
+        "backup"
+      ],
+      "specs": {
+        "directory": "sidecars/example-app/specs",
+        "layout": "feature-folder",
+        "file": "spec.md",
+        "naming": "<feature-number>-<slug>",
+        "template": null,
+        "constitution": "sidecars/example-app/constitution.md",
+        "specKitScript": null
+      }
+    }
+  ],
+  "relationships": [
+    {
+      "from": "example-web",
+      "to": "example-api",
+      "type": "http-rest",
+      "protocol": "HTTPS",
+      "description": "example-web consume la API de example-api."
+    }
+  ],
+  "topology": {
+    "pattern": "monorepo-contenedor con git submodules",
+    "gitmodules": ".gitmodules",
+    "groups": [
+      {
+        "name": "example",
+        "description": "Grupo de ejemplo: provider + client acoplados por API.",
+        "members": [
+          "example-api",
+          "example-web"
+        ]
+      }
+    ]
+  },
+  "rootOrchestration": {
+    "enabled": true,
+    "root": ".",
+    "rule": "Todos los comandos y skills operan desde la raíz de brain-corp. Las rutas de los sidecars se resuelven desde config/system-map.json; nunca se requiere cambiar de directorio.",
+    "pathResolution": "repositories[].path (relativo a la raíz)",
+    "neverCd": true
+  },
+  "domains": {
+    "example-api": [
+      "catalog",
+      "accounts",
+      "reports"
+    ],
+    "example-web": [
+      "home",
+      "catalog",
+      "accounts",
+      "settings"
+    ],
+    "example-app": [
+      "dashboard",
+      "settings",
+      "backup"
+    ]
+  },
+  "notes": [
+    "Este archivo es solo una referencia de estructura; el mapa activo es config/system-map.json.",
+    "Los roles disponibles son provider, client y standalone.",
+    "Usa `brain setup` para generar el mapa a partir de tus repositorios reales."
+  ]
+}

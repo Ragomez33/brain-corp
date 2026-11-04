@@ -9,7 +9,7 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** ejecutando la nor
 
 ## Modo Orquestador Raíz (obligatorio)
 
-- Trabaja desde la raíz de `/Users/raulgomez/Desktop/brain-corp`; no uses `cd`.
+- Trabaja desde la raíz de brain-corp; no uses `cd`.
 - Resuelve rutas de sidecars, dominios y constituciones desde `config/system-map.json`.
 - Usa `workdir`/`cwd` cuando una herramienta necesite ejecutarse en un sidecar.
 
@@ -23,7 +23,7 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** ejecutando la nor
 
 1. Lee `config/system-map.json`.
 2. Analiza el texto plano del ticket (título y cuerpo) e infiere el `target_domain`:
-   - `forge-backend`, `forge-front`, `foundly-pos` o `shared`.
+   - Un `target_domain` registrado en `config/system-map.json`, o `shared`.
    - Usa la sugerencia de `node scripts/normalize-ticket.js --json` como punto de partida, pero valida con el contenido real y los dominios del mapa.
 3. Si el dominio no puede inferirse con confianza, formula una sola pregunta de clarificación al usuario antes de continuar.
 
@@ -38,7 +38,7 @@ Reestructura el archivo local con:
 id: "TICK-XXX"
 title: "Título descriptivo"
 author: "Brain-Corp Analyst"
-target_domain: "forge-backend | forge-front | foundly-pos | shared"
+target_domain: "<id-de-sidecar-registrado> | shared"
 status: "backlog"
 created_at: "YYYY-MM-DD"
 dependencies: []

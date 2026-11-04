@@ -19,7 +19,7 @@
 ## Artículo 2 — Separación estricta entre orquestación y producto
 
 1. La raíz de brain-corp contiene únicamente: `.agents/`, `.opencode/`, `config/`, `scripts/`, `.specify/`, documentación de orquestación y archivos de gobernanza.
-2. La raíz **no contiene lógica de negocio, componentes, esquemas de datos ni código de producto**. Esos artefactos pertenecen a los sidecars (`forge-backend`, `forge-front`, `foundly-pos`) y se modifican dentro de su repositorio/submódulo.
+2. La raíz **no contiene lógica de negocio, componentes, esquemas de datos ni código de producto**. Esos artefactos pertenecen a los sidecars registrados en `config/system-map.json` y se modifican dentro de su repositorio/submódulo.
 3. Los sidecars no deben depender de scripts o metadatos de la raíz para funcionar en producción. La raíz orquesta; los sidecars ejecutan.
 4. Las rutas de los sidecars se resuelven siempre desde `config/system-map.json`; nunca se codifican rutas absolutas de la máquina en scripts o tickets.
 5. Todo cambio en un sidecar conserva su propia constitución, reglas de código, specs y quality gates. brain-corp no reemplaza ni duplica esas reglas.
@@ -28,9 +28,9 @@
 
 1. `npm run sanity` o `/sanity-check` es **obligatorio** antes de publicar tickets en GitHub.
 2. `scripts/sync-github.js` ejecuta el sanity check por defecto y **aborta** si hay errores bloqueantes. `--skip-sanity` solo se permite en una emergencia explícita y debe justificarse en el reporte de la operación.
-3. El sanity check valida, como mínimo: IDs únicos, frontmatter obligatorio, coherencia `status`/carpeta, dominios permitidos, dependencias existentes y sin ciclos, duplicados evidentes, secciones obligatorias del ticket y la regla UI→Backend (un ticket de frontend que exige cambios de API debe depender de un ticket `forge-backend` o `shared`).
+3. El sanity check valida, como mínimo: IDs únicos, frontmatter obligatorio, coherencia `status`/carpeta, dominios permitidos, dependencias existentes y sin ciclos, duplicados evidentes, secciones obligatorias del ticket y la regla UI→Backend (un ticket de un sidecar `client` que exige cambios de API debe depender de un ticket de un sidecar `provider` o `shared`).
 4. El resultado se registra en `.agents/tickets/.sanity-check.json`. Un ticket está listo para sync solo cuando no tiene errores bloqueantes.
-5. El sanity check no reemplaza la revisión semántica: `/sanity-check` contrasta los tickets con `config/system-map.json`, los esquemas Prisma/Drizzle y el contrato GraphQL real.
+5. El sanity check no reemplaza la revisión semántica: `/sanity-check` contrasta los tickets con `config/system-map.json`, los esquemas, contratos y APIs reales de los sidecars.
 
 ## Artículo 4 — Trazabilidad obligatoria por tickets
 
@@ -61,12 +61,12 @@
 7. No se reescribe historia compartida: prohibido `amend` o `force-push` sobre commits ya publicados.
 8. El merge no se considera entrega terminada hasta ejecutar `/complete` o hasta que `sync:pull` mueva el ticket a `done/`.
 
-## Artículo 7 — Integridad del ecosistema Forge / Foundly
+## Artículo 7 — Integridad del ecosistema multi-repositorio
 
-1. `forge-backend` es la fuente de verdad de datos y reglas de negocio de Forge; `forge-front` consume su contrato GraphQL. Un cambio de contrato requiere ticket de backend o `shared`.
-2. `foundly-pos` es local-first, usa Drizzle/SQLite y no depende de `forge-backend`. Cualquier sincronización Foundly ↔ Forge se considera **no implementada** hasta que exista ticket, contrato y pruebas.
-3. No se asume equivalencia de modelos entre Prisma/PostgreSQL y Drizzle/SQLite. Las diferencias de dinero (`Decimal` en Forge vs centavos enteros en Foundly) requieren conversión explícita.
-4. Forge es multi-tenant y Foundly es mononegocio local. Cualquier puente debe definir el mapeo `tenant` ↔ negocio y el aislamiento de datos.
+1. Los sidecars con rol `provider` son la fuente de verdad de datos y reglas de negocio de su dominio; los sidecars con rol `client` consumen sus contratos. Un cambio de contrato requiere ticket del provider o `shared`.
+2. Los sidecars con rol `standalone` operan de forma autónoma. Cualquier integración con otro sidecar se considera **no implementada** hasta que exista ticket, contrato y pruebas.
+3. No se asume equivalencia de modelos, tipos ni reglas de negocio entre sidecars. Las diferencias de representación (importes, fechas, identificadores) requieren conversión explícita.
+4. Cualquier relación entre sidecars debe declararse en `config/system-map.json` con su protocolo, dirección y descripción.
 5. Las reglas de negocio no se duplican en la raíz; se documentan y ejecutan en el sidecar propietario.
 
 ## Artículo 8 — Cumplimiento y enmiendas

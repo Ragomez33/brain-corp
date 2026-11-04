@@ -6,8 +6,18 @@
   "systemMap": "config/system-map.json",
   "tickets": {
     "directory": ".agents/tickets",
-    "states": ["backlog", "in-analysis", "ready", "done"],
-    "searchOrder": ["in-analysis", "backlog", "ready", "done"],
+    "states": [
+      "backlog",
+      "in-analysis",
+      "ready",
+      "done"
+    ],
+    "searchOrder": [
+      "in-analysis",
+      "backlog",
+      "ready",
+      "done"
+    ],
     "inputPattern": ".agents/tickets/<state>/TICK-XXX-<slug>.md"
   },
   "routeBy": "target_domain",
@@ -26,55 +36,17 @@
       "speckit.tasks",
       "speckit.implement"
     ],
-    "scriptArgs": ["--json", "--short-name", "<slug>", "<ticket-title>"],
+    "scriptArgs": [
+      "--json",
+      "--short-name",
+      "<slug>",
+      "<ticket-title>"
+    ],
     "ticketReference": "Incluir el ID y la ruta del ticket dentro de la spec (Source Ticket); el nombre de la carpeta lo define spec-kit."
   },
   "shared": {
     "strategy": "fan-out",
     "description": "Si target_domain es shared, determinar los sidecars afectados desde los requerimientos del ticket y generar una spec nativa por cada uno."
   },
-  "projects": {
-    "forge-backend": {
-      "systemMapRepository": "forge-backend",
-      "path": "sidecars/forge-backend",
-      "specifyInitDir": "sidecars/forge-backend",
-      "specs": {
-        "directory": "sidecars/forge-backend/.spec",
-        "layout": "feature-folder",
-        "file": "spec.md",
-        "naming": "<feature-number>-<slug>",
-        "template": "sidecars/forge-backend/.specify/templates/spec-template.md",
-        "constitution": "sidecars/forge-backend/.spec/constitution.md",
-        "specKitScript": "sidecars/forge-backend/.specify/scripts/bash/create-new-feature.sh"
-      }
-    },
-    "forge-front": {
-      "systemMapRepository": "forge-front",
-      "path": "sidecars/forge-front",
-      "specifyInitDir": "sidecars/forge-front",
-      "specs": {
-        "directory": "sidecars/forge-front/docs/specs",
-        "layout": "flat",
-        "file": "<ticket-id>-<slug>.spec.md",
-        "naming": "<ticket-id>-<slug>",
-        "template": null,
-        "constitution": "sidecars/forge-front/constitution.md",
-        "specKitScript": null
-      }
-    },
-    "foundly-pos": {
-      "systemMapRepository": "foundly-pos",
-      "path": "sidecars/foundly-pos",
-      "specifyInitDir": "sidecars/foundly-pos",
-      "specs": {
-        "directory": "sidecars/foundly-pos/specs",
-        "layout": "feature-folder",
-        "file": "spec.md",
-        "naming": "<feature-number>-<slug>",
-        "template": "sidecars/foundly-pos/.specify/templates/spec-template.md",
-        "constitution": "sidecars/foundly-pos/constitution.md",
-        "specKitScript": "sidecars/foundly-pos/.specify/scripts/bash/create-new-feature.sh"
-      }
-    }
-  }
+  "projects": {}
 }

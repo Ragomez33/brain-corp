@@ -1,7 +1,11 @@
 const path = require('node:path')
 const { listTickets } = require('./tickets')
+const {
+  getRegisteredRepositories,
+  getTargetDomains,
+  readSystemMap
+} = require('./system-map')
 
-const ALLOWED_DOMAINS = new Set(['forge-backend', 'forge-front', 'foundly-pos', 'shared'])
 const REQUIRED_SECTIONS = [
   '## Contexto / Hallazgo',
   '## Requerimientos Técnicos',
@@ -33,12 +37,12 @@ function ticketLabel(ticket) {
   return ticket.data.id || path.basename(ticket.filePath)
 }
 
-function isBackendTicket(ticket) {
-  return ticket.data.target_domain === 'forge-backend' || ticket.data.target_domain === 'shared'
-}
-
 function requiresBackendWork(text) {
   return API_REQUIREMENT_PATTERNS.some(pattern => pattern.test(text))
+}
+
+function isProviderDomain(domain, domainRoles) {
+  return domain === 'shared' || domainRoles.get(domain) === 'provider'
 }
 
 function detectCycles(byId, dependencies) {
@@ -73,6 +77,14 @@ function detectCycles(byId, dependencies) {
 
 function runSanityCheck() {
   const tickets = listTickets()
+  const systemMap = readSystemMap()
+  const allowedDomains = getTargetDomains(systemMap)
+  const domainRoles = new Map(
+    getRegisteredRepositories(systemMap).map(repository => [
+      repository.id,
+      repository.role
+    ])
+  )
   const errors = []
   const warnings = []
   const byId = new Map()
@@ -95,8 +107,10 @@ function runSanityCheck() {
     if (!data.author) errors.push(`${fileName}: falta el campo obligatorio "author".`)
     if (!data.target_domain) {
       errors.push(`${fileName}: falta el campo obligatorio "target_domain".`)
-    } else if (!ALLOWED_DOMAINS.has(data.target_domain)) {
-      errors.push(`${fileName}: "target_domain" inválido (${data.target_domain}).`)
+    } else if (!allowedDomains.has(data.target_domain)) {
+      errors.push(
+        `${fileName}: "target_domain" inválido (${data.target_domain}); permitidos: ${[...allowedDomains].join(', ')}.`
+      )
     }
 
     if (!data.status) {
@@ -191,15 +205,20 @@ function runSanityCheck() {
       }
     }
 
-    if (ticket.data.target_domain === 'forge-front' && requiresBackendWork(ticket.content)) {
-      const hasBackendDependency = deps.some(dep => {
+    if (
+      domainRoles.get(ticket.data.target_domain) === 'client' &&
+      requiresBackendWork(ticket.content)
+    ) {
+      const hasProviderDependency = deps.some(dep => {
         const depTicket = byId.get(dep)
-        return depTicket ? isBackendTicket(depTicket) : false
+        return depTicket
+          ? isProviderDomain(depTicket.data.target_domain, domainRoles)
+          : false
       })
 
-      if (!hasBackendDependency) {
+      if (!hasProviderDependency) {
         errors.push(
-          `${label}: el ticket de frontend requiere trabajo de API/backend pero no declara una dependencia a un ticket forge-backend/shared.`
+          `${label}: el ticket de un sidecar client requiere trabajo de API/backend pero no declara una dependencia a un ticket provider o shared.`
         )
       }
     }
@@ -218,7 +237,7 @@ function runSanityCheck() {
 
       return {
         id: label || path.basename(ticket.filePath, '.md'),
-        file: path.relative(path.resolve(__dirname, '..', '..'), ticket.filePath),
+        file: path.relative(process.cwd(), ticket.filePath),
         status: ticketErrors.length > 0 ? 'error' : 'ok',
         fixes: [],
         warnings: ticketWarnings
@@ -242,7 +261,6 @@ function runSanityCheck() {
 }
 
 module.exports = {
-  ALLOWED_DOMAINS,
   REQUIRED_SECTIONS,
   runSanityCheck,
   requiresBackendWork
