@@ -1,6 +1,6 @@
 {
-  "name": "brain-corp",
-  "version": "1.0.0",
+  "name": "@rgkoko/brain-corp",
+  "version": "1.0.1",
   "description": "CLI de orquestación de ecosistemas multi-repositorio: topología de sidecars, tickets y sincronización con GitHub Issues.",
   "license": "MIT",
   "author": "Ragomez33",
@@ -29,16 +29,15 @@
     "brain": "./bin/brain.js"
   },
   "files": [
-    "bin/",
-    "scripts/",
-    "config/",
-    ".agents/prompts/",
-    ".agents/skills/",
-    ".opencode/commands/",
-    ".specify/",
+    "bin",
+    "scripts",
+    "config",
+    ".agents",
+    ".opencode",
+    ".specify",
+    "LICENSE",
     "README.md",
-    "constitution.md",
-    "LICENSE"
+    "constitution.md"
   ],
   "scripts": {
     "brain": "node bin/brain.js",
