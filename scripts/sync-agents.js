@@ -3,6 +3,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { provisionAgentAssets } = require('./lib/agent-provision')
+const { t } = require('./lib/i18n')
 
 const CONFIG_FILE = '.brainrc.json'
 const DEFAULT_AGENT = 'opencode'
@@ -14,20 +15,12 @@ function fail(message) {
 }
 
 function printHelp() {
-  console.log(`brain-corp agents:sync
-
-Uso:
-  node scripts/sync-agents.js [opciones]
-
-Opciones:
-  --root <dir>     Workspace destino (por defecto, el directorio actual).
-  --agent <id>     Motor destino: ${SUPPORTED_AGENTS.join(' | ')}.
-  --overwrite      Sobrescribe assets existentes del workspace.
-  --json           Imprime el resultado en JSON.
-  --help           Muestra esta ayuda.
-
-Sin --agent, usa defaultAgent de .brainrc.json (o "${DEFAULT_AGENT}").
-Re-despliega prompts, skills, plantillas SDD, constitución central y comandos del motor sin abrir sesión.`)
+  console.log(
+    t('agents.help', {
+      agents: SUPPORTED_AGENTS.join(' | '),
+      default: DEFAULT_AGENT
+    })
+  )
 }
 
 function parseArgs(argv) {
@@ -43,7 +36,7 @@ function parseArgs(argv) {
     const current = argv[index]
     const next = () => {
       const value = argv[index + 1]
-      if (value === undefined || value.startsWith('--')) fail(`Falta el valor para ${current}`)
+      if (value === undefined || value.startsWith('--')) fail(t('agents.missingValue', { option: current }))
       index += 1
       return value
     }
@@ -53,7 +46,7 @@ function parseArgs(argv) {
     else if (current === '--overwrite') args.overwrite = true
     else if (current === '--json') args.json = true
     else if (current === '--help' || current === '-h') args.help = true
-    else fail(`Opción desconocida: ${current}`)
+    else fail(t('agents.unknownOption', { option: current }))
   }
 
   return args
@@ -66,7 +59,7 @@ function readConfig(rootDir) {
   try {
     return JSON.parse(fs.readFileSync(configPath, 'utf8'))
   } catch (error) {
-    fail(`No se pudo leer ${CONFIG_FILE}: ${error.message}`)
+    fail(t('agents.badConfig', { file: CONFIG_FILE, error: error.message }))
   }
 }
 
@@ -87,7 +80,7 @@ function main() {
   }
 
   const rootDir = args.root
-  if (!fs.existsSync(rootDir)) fail(`No existe el workspace: ${rootDir}`)
+  if (!fs.existsSync(rootDir)) fail(t('agents.missingWorkspace', { root: rootDir }))
 
   const agent = resolveAgent({ rootDir, agent: args.agent })
   const result = provisionAgentAssets({
@@ -101,9 +94,12 @@ function main() {
     return
   }
 
-  console.log(`[sync-agents] Motor: ${agent} · workspace: ${rootDir}`)
+  console.log(t('agents.engine', { agent, root: rootDir }))
   console.log(
-    `[sync-agents] ${result.created.length} archivo(s) nuevos, ${result.skipped.length} ya existentes.`
+    t('agents.summary', {
+      created: result.created.length,
+      skipped: result.skipped.length
+    })
   )
 
   for (const item of result.created) {

@@ -72,7 +72,8 @@ Pasos:
 3. Ejecuta `/init-work TICK-XXX [--repo <id>]`. El motor crea `.brain/features/<TICK-XXX>/`, copia las plantillas y genera `contract.md` solo si el ticket cruza sidecars o es `shared`.
 4. Ejecuta `/specify` para generar `spec.md` en formato EARS. Conserva la trazabilidad con `Source Ticket: .agents/tickets/<estado>/TICK-XXX-<slug>.md`.
 5. Continúa con `/plan`, `/tasks`, `/implement` (checkpoint o batch) y `/analyze` para detectar spec drift.
-6. El motor SDD es 100% Node.js: no requiere scripts bash externos ni carpetas de especificación fuera de `.brain/`. La configuración estructural es `config/system-map.json`.
+6. Redacta spec, plan y tareas en el idioma definido por `language` en `.brain/config.json` (por defecto, inglés técnico).
+7. El motor SDD es 100% Node.js: no requiere scripts bash externos ni carpetas de especificación fuera de `.brain/`. La configuración estructural es `config/system-map.json`.
 
 Actualiza el estado del ticket según corresponda (`in-analysis` o `ready`) y reporta la ruta exacta de la feature generada.
 

@@ -3,6 +3,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
+const { t } = require('./lib/i18n')
 
 const ROOT_DIR = process.cwd()
 const SYNC_PULL = path.join(__dirname, 'sync-pull.js')
@@ -26,13 +27,13 @@ function parseArgs(argv) {
       args.logFile = argv[index + 1]
       index += 1
     } else {
-      console.error(`[watch-github] Argumento no reconocido: ${current}`)
+      console.error(t('watch.unknownArg', { arg: current }))
       process.exit(1)
     }
   }
 
   if (!Number.isFinite(args.intervalSeconds) || args.intervalSeconds <= 0) {
-    console.error('[watch-github] El intervalo debe ser un número positivo de segundos.')
+    console.error(t('watch.invalidInterval'))
     process.exit(1)
   }
 

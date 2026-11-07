@@ -13,6 +13,8 @@ const {
   systemMapPath
 } = require('./lib/system-map')
 const { runSetupWizard } = require('./setup-wizard')
+const { normalizeLanguage, resolveLanguage, setLanguage } = require('./lib/config')
+const { t } = require('./lib/i18n')
 
 // El workspace es siempre el directorio desde el que se invoca el CLI.
 const ROOT_DIR = process.cwd()
@@ -26,8 +28,50 @@ const AGENTS = [
   { value: 'claude', label: 'Claude Code' },
   { value: 'cursor', label: 'Cursor' },
   { value: 'antigravity', label: 'Antigravity' },
-  { value: 'custom', label: 'Personalizado' }
+  { value: 'custom', labelKey: 'init.customAgentLabel' }
 ]
+
+function agentLabel(agent) {
+  return agent.labelKey ? t(agent.labelKey) : agent.label
+}
+
+async function chooseLanguage(rl) {
+  const current = resolveLanguage(ROOT_DIR)
+  const flagIndex = process.argv.indexOf('--lang')
+  const requested = flagIndex !== -1 ? process.argv[flagIndex + 1] : null
+
+  if (requested) {
+    const normalized = normalizeLanguage(requested)
+    if (!normalized) {
+      console.warn(t('language.invalid'))
+    } else {
+      setLanguage(ROOT_DIR, normalized)
+      console.log(t('language.saved', { lang: normalized }))
+      return normalized
+    }
+  }
+
+  if (!isInteractiveTerminal()) {
+    setLanguage(ROOT_DIR, current)
+    return current
+  }
+
+  const selected = await promptSelection(rl, {
+    message: t('language.prompt', {}, 'en'),
+    choices: [
+      { name: t('language.en', {}, 'en'), value: 'en' },
+      { name: t('language.es', {}, 'es'), value: 'es' }
+    ],
+    pageSize: 2,
+    multiple: false,
+    initialCursor: current === 'es' ? 1 : 0
+  })
+
+  const language = selected ? selected.value : current
+  setLanguage(ROOT_DIR, language)
+  console.log(t('language.saved', { lang: language }))
+  return language
+}
 
 function fail(message) {
   console.error(`\n[init-brain] ${message}`)
@@ -42,13 +86,13 @@ function runGh(args, { allowFailure = false } = {}) {
 
   if (result.error) {
     if (allowFailure) return null
-    fail('No se encontró el CLI de GitHub (gh). Instálalo desde https://cli.github.com/.')
+    fail(t('init.ghMissing'))
   }
 
   if (result.status !== 0) {
     if (allowFailure) return null
     const stderr = (result.stderr || '').trim()
-    fail(stderr || `El comando "gh ${args.join(' ')}" falló.`)
+    fail(stderr || t('init.ghFailed', { command: args.join(' ') }))
   }
 
   return (result.stdout || '').trim()
@@ -58,7 +102,7 @@ function assertGhSession() {
   const status = runGh(['auth', 'status'], { allowFailure: true })
 
   if (status === null) {
-    fail('El CLI de GitHub no tiene una sesión activa. Ejecuta "gh auth login" y vuelve a intentar.')
+    fail(t('init.ghSession'))
   }
 }
 
@@ -66,7 +110,7 @@ function getGithubUser() {
   const user = runGh(['api', 'user', '--jq', '.login'])
 
   if (!user) {
-    fail('No se pudo obtener el usuario autenticado de GitHub.')
+    fail(t('init.ghUser'))
   }
 
   return user
@@ -78,7 +122,7 @@ function readConfig() {
   try {
     return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'))
   } catch (error) {
-    fail(`.brainrc.json existe pero no es JSON válido: ${error.message}`)
+    fail(t('init.badConfig', { error: error.message }))
   }
 }
 
@@ -127,8 +171,8 @@ async function chooseAgent(rl, defaultValue) {
 
   if (isInteractiveTerminal()) {
     const selected = await promptSelection(rl, {
-      message: 'Motor de agente CLI para esta sesión',
-      choices: AGENTS.map(agent => ({ name: agent.label, value: agent.value })),
+      message: t('init.agentsHeading'),
+      choices: AGENTS.map(agent => ({ name: agentLabel(agent), value: agent.value })),
       pageSize: AGENTS.length,
       multiple: false,
       initialCursor: defaultIndex
@@ -138,25 +182,25 @@ async function chooseAgent(rl, defaultValue) {
 
     if (value !== 'custom') return value
 
-    const custom = await ask(rl, 'Nombre del agente personalizado', 'opencode')
+    const custom = await ask(rl, t('init.customAgentPrompt'), 'opencode')
     return custom || 'opencode'
   }
 
-  console.log('\nMotor de agente CLI para esta sesión:')
+  console.log(`\n${t('init.agentsHeading')}:`)
 
   AGENTS.forEach((agent, index) => {
-    const isDefault = agent.value === defaultValue ? ' (por defecto)' : ''
-    console.log(`  ${index + 1}. ${agent.label}${isDefault}`)
+    const isDefault = agent.value === defaultValue ? ` ${t('init.defaultSuffix')}` : ''
+    console.log(`  ${index + 1}. ${agentLabel(agent)}${isDefault}`)
   })
 
-  const answer = await ask(rl, 'Selecciona una opción', String(defaultIndex + 1))
+  const answer = await ask(rl, t('init.selectOption'), String(defaultIndex + 1))
   const index = Number(answer)
 
   if (Number.isInteger(index) && index >= 1 && index <= AGENTS.length) {
     const selected = AGENTS[index - 1]
     if (selected.value !== 'custom') return selected.value
 
-    const custom = await ask(rl, 'Nombre del agente personalizado', 'opencode')
+    const custom = await ask(rl, t('init.customAgentPrompt'), 'opencode')
     return custom || 'opencode'
   }
 
@@ -168,7 +212,7 @@ async function askProject(rl, githubUser) {
   while (true) {
     const raw = await ask(
       rl,
-      'Project ID o URL del GitHub Project Kanban (vacío para omitir)'
+      t('init.projectPrompt')
     )
 
     if (!raw) {
@@ -178,12 +222,12 @@ async function askProject(rl, githubUser) {
     const parsed = parseProjectInput(raw)
 
     if (!parsed) {
-      console.log('  Formato no reconocido. Usa un número o una URL como https://github.com/orgs/MiOrg/projects/5')
+      console.log(t('init.projectFormat'))
       continue
     }
 
     const owner =
-      parsed.projectOwner || (await ask(rl, 'Propietario del Project (usuario u organización)', githubUser))
+      parsed.projectOwner || (await ask(rl, t('init.projectOwnerPrompt'), githubUser))
 
     const validation = runGh(
       ['project', 'view', String(parsed.projectId), '--owner', owner, '--format', 'json'],
@@ -191,7 +235,7 @@ async function askProject(rl, githubUser) {
     )
 
     if (validation === null) {
-      console.log('  Aviso: no se pudo verificar el Project (puede faltar el scope "project"). Se guardará igualmente.')
+      console.log(t('init.projectWarning'))
     }
 
     return { projectId: parsed.projectId, projectOwner: owner }
@@ -199,7 +243,7 @@ async function askProject(rl, githubUser) {
 }
 
 function runSyncPull() {
-  console.log('\nSincronizando tickets desde GitHub (sync-pull)...')
+  console.log(`\n${t('init.syncPull')}`)
 
   const result = spawnSync(buildNodeCommand(SYNC_PULL_PATH), {
     cwd: ROOT_DIR,
@@ -211,9 +255,7 @@ function runSyncPull() {
   if (result.stderr) process.stderr.write(result.stderr)
 
   if (result.status !== 0) {
-    console.warn(
-      '[init-brain] sync-pull no pudo completarse. Se continúa con el estado local.'
-    )
+    console.warn(t('init.syncPullFailed'))
   }
 }
 
@@ -232,7 +274,7 @@ async function maybeStartWatcher(rl, config) {
   const previousPid = config.lastSession && config.lastSession.watchPid
 
   if (isProcessAlive(previousPid)) {
-    console.log(`\nWatcher ya activo (PID ${previousPid}).`)
+    console.log(`\n${t('init.watcherActive', { pid: previousPid })}`)
     return config
   }
 
@@ -243,7 +285,7 @@ async function maybeStartWatcher(rl, config) {
 
   const enabled = await confirm(
     rl,
-    '\n¿Activar watcher en tiempo real (cada 45s)?',
+    `\n${t('init.watcherPrompt')}`,
     false
   )
 
@@ -257,7 +299,7 @@ async function maybeStartWatcher(rl, config) {
   if (!enabled) {
     config.updatedAt = now
     writeConfig(config)
-    console.log('Watcher no activado.')
+    console.log(t('init.watcherOff'))
     return config
   }
 
@@ -277,17 +319,17 @@ async function maybeStartWatcher(rl, config) {
   config.updatedAt = now
   writeConfig(config)
 
-  console.log(`Watcher iniciado en segundo plano (PID ${child.pid}). Log: ${WATCH_LOG}`)
+  console.log(t('init.watcherStarted', { pid: child.pid, log: WATCH_LOG }))
 
   return config
 }
 
 async function onboard(rl) {
-  console.log('\n=== brain-corp · Onboarding inicial ===\n')
+  console.log(`\n${t('init.onboardingTitle')}\n`)
 
   assertGhSession()
   const githubUser = getGithubUser()
-  console.log(`Usuario de GitHub detectado: ${githubUser}`)
+  console.log(t('init.githubUserDetected', { user: githubUser }))
 
   const { projectId, projectOwner } = await askProject(rl, githubUser)
   const defaultAgent = await chooseAgent(rl, 'opencode')
@@ -305,25 +347,25 @@ async function onboard(rl) {
 
   writeConfig(config)
 
-  console.log('\nConfiguración guardada en .brainrc.json:')
-  console.log(`  GitHub user:     ${githubUser}`)
-  console.log(`  Project:         ${projectId ? `#${projectId} (${projectOwner})` : 'sin configurar'}`)
-  console.log(`  Agente por defecto: ${defaultAgent}`)
+  console.log(`\n${t('init.configSaved')}`)
+  console.log(`  ${t('init.githubUser')}:     ${githubUser}`)
+  console.log(`  ${t('init.project')}:         ${projectId ? `#${projectId} (${projectOwner})` : t('init.notConfigured')}`)
+  console.log(`  ${t('init.defaultAgent')}: ${defaultAgent}`)
 
   return config
 }
 
 async function sessionMenu(rl, config) {
-  console.log('\n=== brain-corp · Sesión ===\n')
-  console.log(`Usuario: ${config.githubUser}`)
-  console.log(`Project: ${config.projectId ? `#${config.projectId} (${config.projectOwner})` : 'sin configurar'}`)
+  console.log(`\n${t('init.sessionTitle')}\n`)
+  console.log(`${t('init.user')}: ${config.githubUser}`)
+  console.log(`${t('init.project')}: ${config.projectId ? `#${config.projectId} (${config.projectOwner})` : t('init.notConfigured')}`)
 
   const agent = await chooseAgent(rl, config.defaultAgent || 'opencode')
 
   const focus = await ask(
     rl,
-    '\nFoco de la sesión (módulo, tarea o sidecar; vacío = análisis global)',
-    'análisis global'
+    `\n${t('init.focusPrompt')}`,
+    t('init.globalAnalysis')
   )
 
   const now = new Date().toISOString()
@@ -337,10 +379,10 @@ async function sessionMenu(rl, config) {
 
   writeConfig(config)
 
-  console.log('\nSesión configurada:')
-  console.log(`  Agente: ${agent}`)
-  console.log(`  Foco:   ${focus}`)
-  console.log('\nSugerencia: usa /cross-analyze <tema> para abrir un ticket o /init-work <TICK-XXX> para iniciar su spec SDD en .brain/features/.')
+  console.log(`\n${t('init.sessionConfigured')}`)
+  console.log(`  ${t('init.agent')}: ${agent}`)
+  console.log(`  ${t('init.focus')}:   ${focus}`)
+  console.log(`\n${t('init.suggestion')}`)
 
   return config
 }
@@ -352,9 +394,9 @@ function stopWatcher(config) {
   if (isProcessAlive(pid)) {
     try {
       process.kill(Number(pid), 'SIGTERM')
-      console.log(`\nWatcher detenido (PID ${pid}).`)
+      console.log(`\n${t('init.watcherStopped', { pid })}`)
     } catch (error) {
-      console.warn(`\n[init-brain] No se pudo detener el watcher (PID ${pid}): ${error.message}`)
+      console.warn(t('init.watcherStopError', { pid, error: error.message }))
     }
   }
 
@@ -366,7 +408,7 @@ function stopWatcher(config) {
     try {
       writeConfig(config)
     } catch (error) {
-      console.warn(`[init-brain] No se pudo actualizar .brainrc.json: ${error.message}`)
+      console.warn(`[init-brain] ${t('init.badConfig', { error: error.message })}`)
     }
   }
 }
@@ -374,7 +416,7 @@ function stopWatcher(config) {
 function launchAgent(config) {
   const agent = (config && config.defaultAgent) || 'opencode'
 
-  console.log(`\nLanzando ${agent}...`)
+  console.log(`\n${t('init.launching', { agent })}`)
 
   return new Promise((resolve, reject) => {
     let cleaned = false
@@ -427,7 +469,7 @@ function launchAgent(config) {
       cleanup()
       reject(
         new Error(
-          `No se pudo lanzar el agente "${agent}": ${error.message}. Verifica que esté instalado y disponible en el PATH.`
+          t('init.launchError', { agent, error: error.message })
         )
       )
     })
@@ -445,16 +487,16 @@ async function main() {
   let config
 
   try {
+    await chooseLanguage(rl)
+
     const manualSetup = process.argv.includes('--manual')
     const mapPath = systemMapPath(ROOT_DIR)
     let systemMap = readSystemMap(ROOT_DIR)
     const configured = fs.existsSync(mapPath) && hasValidSidecars(systemMap)
 
     if (!configured) {
-      console.log(
-        '[init-brain] Workspace sin configurar: no hay config/system-map.json con sidecars válidos.'
-      )
-      console.log('[init-brain] Iniciando setup wizard en el directorio actual...')
+      console.log(t('init.workspaceMissing'))
+      console.log(t('init.setupStarting'))
 
       await runSetupWizard({
         rl,
@@ -466,9 +508,7 @@ async function main() {
       systemMap = readSystemMap(ROOT_DIR)
 
       if (!hasValidSidecars(systemMap)) {
-        throw new Error(
-          'El workspace sigue sin sidecars configurados. Ejecuta "brain setup" en este directorio antes de iniciar la sesión.'
-        )
+        throw new Error(t('init.sidecarsMissing'))
       }
     }
 
@@ -483,11 +523,12 @@ async function main() {
     })
 
     console.log(
-      `[init-brain] Assets del agente verificados: ${provisioned.created.length} archivo(s) nuevos, ${provisioned.skipped.length} ya existentes.`
+      t('init.assetsVerified', {
+        created: provisioned.created.length,
+        skipped: provisioned.skipped.length
+      })
     )
-    console.log(
-      `[init-brain] Prompts/skills/templates SDD desplegados en ${ROOT_DIR}.`
-    )
+    console.log(t('init.assetsDeployed', { dir: ROOT_DIR }))
 
     await maybeStartWatcher(rl, config)
   } finally {

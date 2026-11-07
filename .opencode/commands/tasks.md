@@ -27,4 +27,6 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** desglosando el pl
    - Incluye verificación final: pruebas y criterios de aceptación.
 6. No marques tareas como completadas; eso ocurre en `/implement`.
 
+Escribe las tareas en el idioma definido por `language` en `.brain/config.json` (por defecto, inglés técnico).
+
 Reporta la ruta de `tasks.md` y el siguiente paso: `/implement`.

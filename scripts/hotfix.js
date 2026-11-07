@@ -14,6 +14,7 @@ const {
   updateFrontmatter
 } = require('./lib/tickets')
 const { getTargetDomains } = require('./lib/system-map')
+const { t } = require('./lib/i18n')
 
 const SYSTEM_MAP_PATH = path.join(ROOT_DIR, 'config', 'system-map.json')
 const BRAINRC_PATH = path.join(ROOT_DIR, '.brainrc.json')
@@ -44,7 +45,7 @@ function parseArgs(argv) {
     const current = argv[index]
     const next = () => {
       const value = argv[index + 1]
-      if (!value || value.startsWith('--')) fail(`Falta el valor para ${current}`)
+      if (!value || value.startsWith('--')) fail(t('hotfix.missingValue', { option: current }))
       index += 1
       return value
     }
@@ -62,14 +63,14 @@ function parseArgs(argv) {
     else if (current === '--fetch') args.fetch = true
     else if (current === '--json') args.json = true
     else if (current === '--dry-run') args.dryRun = true
-    else fail(`Argumento no reconocido: ${current}`)
+    else fail(t('hotfix.unknownArg', { arg: current }))
   }
 
-  if (!args.title) fail('Falta --title (título del hotfix).')
-  if (!args.domain) fail('Falta --domain (id de sidecar registrado o "shared").')
-  if (!args.module) fail('Falta --module (módulo del commit, ej. inventory).')
+  if (!args.title) fail(t('hotfix.missingTitle'))
+  if (!args.domain) fail(t('hotfix.missingDomain'))
+  if (!args.module) fail(t('hotfix.missingModule'))
   if (!args.specImpact) {
-    fail('Falta --spec-impact. Usa "none" o una referencia a la enmienda de la spec/tasks.md.')
+    fail(t('hotfix.missingSpecImpact'))
   }
 
   args.title = String(args.title).replace(/\s+/g, ' ').trim()
@@ -78,7 +79,7 @@ function parseArgs(argv) {
   if (args.specImpact.toLowerCase() === 'none') args.specImpact = 'none'
 
   if (args.domain === 'shared' && !args.repo) {
-    fail('El dominio "shared" requiere --repo con el sidecar o "root" para brain-corp.')
+    fail(t('hotfix.sharedRepoRequired'))
   }
 
   return args
@@ -88,7 +89,7 @@ function loadSystemMap() {
   try {
     return JSON.parse(fs.readFileSync(SYSTEM_MAP_PATH, 'utf8'))
   } catch (error) {
-    fail(`No se pudo leer config/system-map.json: ${error.message}`)
+    fail(t('hotfix.readMapError', { error: error.message }))
   }
 }
 
@@ -101,7 +102,7 @@ function resolveRepoPath({ domain, repoArg, systemMap }) {
   }
 
   const entry = systemMap.repositories.find(repository => repository.id === domain)
-  if (!entry) fail(`No hay repositorio configurado para el dominio ${domain}. Usa --repo.`)
+  if (!entry) fail(t('hotfix.noRepoForDomain', { domain }))
   return { path: path.join(ROOT_DIR, entry.path), id: entry.id }
 }
 
@@ -128,7 +129,7 @@ function nextTicketId() {
   }, 0)
 
   const next = max + 1
-  if (next > 999) fail('No quedan IDs TICK disponibles (máximo TICK-999).')
+  if (next > 999) fail(t('hotfix.maxTickets'))
   return `TICK-${String(next).padStart(3, '0')}`
 }
 
@@ -190,7 +191,10 @@ function main() {
 
   if (!allowedDomains.has(args.domain)) {
     fail(
-      `Dominio inválido: ${args.domain}. Registra el sidecar en config/system-map.json o usa uno de: ${[...allowedDomains].join(', ')}.`
+      t('hotfix.invalidDomain', {
+        domain: args.domain,
+        domains: [...allowedDomains].join(', ')
+      })
     )
   }
 
@@ -203,7 +207,7 @@ function main() {
   try {
     runGit(repo.path, ['rev-parse', '--is-inside-work-tree'])
   } catch {
-    fail(`La ruta ${repo.path} no es un repositorio git válido.`)
+    fail(t('hotfix.notGitRepo', { path: repo.path }))
   }
 
   const id = nextTicketId()
@@ -253,7 +257,7 @@ function main() {
       const dirty = runGit(repo.path, ['status', '--porcelain'])
       if (dirty) {
         console.warn(
-          `[hotfix] El repositorio ${repoRelative} tiene cambios sin commitear; la rama se creará sobre el estado actual.`
+          t('hotfix.dirtyRepo', { repo: repoRelative })
         )
       }
 
@@ -329,15 +333,15 @@ function main() {
   if (args.json) {
     console.log(JSON.stringify(result, null, 2))
   } else {
-    if (ticketWritten) console.log(`[hotfix] Ticket creado: ${result.ticket}`)
-    else console.log('[hotfix] dry-run: no se escribió el ticket.')
-    console.log(`[hotfix] Rama: ${branch} (${repoRelative})`)
-    console.log(`[hotfix] Commit sugerido: ${commitMessage}`)
-    console.log(`[hotfix] Spec impact: ${args.specImpact}`)
-    console.log('[hotfix] Siguiente: node scripts/sanity-check.js --write')
-    if (githubIssue) console.log(`[hotfix] Issue #${githubIssue} creado.`)
-    if (branchError) console.error(`[hotfix] Error al crear la rama: ${branchError}`)
-    if (publishError) console.error(`[hotfix] Error al publicar el issue: ${publishError}`)
+    if (ticketWritten) console.log(t('hotfix.ticketCreated', { ticket: result.ticket }))
+    else console.log(t('hotfix.dryRunTicket'))
+    console.log(t('hotfix.branch', { branch, repo: repoRelative }))
+    console.log(t('hotfix.suggestedCommit', { commit: commitMessage }))
+    console.log(t('hotfix.specImpact', { impact: args.specImpact }))
+    console.log(t('hotfix.next'))
+    if (githubIssue) console.log(t('hotfix.issueCreated', { issue: githubIssue }))
+    if (branchError) console.error(t('hotfix.branchError', { error: branchError }))
+    if (publishError) console.error(t('hotfix.publishError', { error: publishError }))
   }
 
   if (branchError || publishError) process.exitCode = 1

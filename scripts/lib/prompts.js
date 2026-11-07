@@ -1,4 +1,5 @@
 const readline = require('node:readline')
+const { t } = require('./i18n')
 
 function isInteractiveTerminal() {
   return Boolean(
@@ -104,12 +105,12 @@ function promptSelection(
 
       const summary =
         value === null
-          ? 'cancelado'
+          ? t('prompts.cancelled')
           : multiple
-            ? `${value.length} seleccionado(s)`
+            ? t('prompts.selected', { count: value.length })
             : value && value.name
               ? value.name
-              : 'sin selección'
+              : t('prompts.none')
 
       console.log(`? ${message} ${summary}`)
       rl.resume()
@@ -126,7 +127,7 @@ function promptSelection(
         process.stdout.write('\x1b[0J')
       }
 
-      console.log(`? ${message} cancelado`)
+      console.log(`? ${message} ${t('prompts.cancelled')}`)
       process.exit(130)
     }
 

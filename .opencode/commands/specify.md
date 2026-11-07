@@ -27,6 +27,7 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** redactando la esp
    - **Opcionales** (`DONDE ...`).
    - Cada requisito con ID `REQ-<U|E|S|N|O>-NNN` y criterios de aceptación verificables.
 5. Mantén `Source Ticket` en la cabecera y no inventes alcance sin evidencia. Si falta información, regístrala en "Preguntas abiertas".
+6. Escribe la spec en el idioma definido por `language` en `.brain/config.json` (por defecto, inglés técnico). La plantilla ya está localizada; no mezcles idiomas dentro del archivo.
 6. Si existe `contract.md`, referencia el contrato en los requisitos de integración.
 
 Reporta la ruta de `spec.md` y el siguiente paso: `/plan`.

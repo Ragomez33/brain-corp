@@ -3,6 +3,7 @@ const path = require('node:path')
 const { resolveContext } = require('./context')
 const { readActive, writeActive, updateActive } = require('./state')
 const { ensureTemplates, scaffoldFromTemplate } = require('./templates')
+const { resolveLanguage } = require('../config')
 
 const FEATURE_FILES = {
   spec: 'spec.md',
@@ -43,9 +44,10 @@ function relativeFeatureDir(ctx) {
 
 function initWork({ ticketId, repoId, force = false }) {
   const ctx = resolveContext({ ticketId, repoId })
+  const language = resolveLanguage(ctx.rootDir)
 
   fs.mkdirSync(ctx.featureDir, { recursive: true })
-  const templates = ensureTemplates(ctx.repoDir)
+  const templates = ensureTemplates(ctx.repoDir, { language })
 
   let contract = null
   if (ctx.contractRequired) {
@@ -54,7 +56,8 @@ function initWork({ ticketId, repoId, force = false }) {
       templateName: 'contract-template.md',
       outputPath: featurePath(ctx, 'contract'),
       variables: ctx.variables,
-      force
+      force,
+      language
     })
   }
 
@@ -65,14 +68,16 @@ function initWork({ ticketId, repoId, force = false }) {
     phase: 'init',
     featureDir: relativeFeatureDir(ctx),
     contract: ctx.contractRequired,
+    language,
     mode: null
   })
 
-  return { ctx, templates, contract }
+  return { ctx, templates, contract, language }
 }
 
 function specify({ ticketId, repoId, force = false }) {
   const ctx = resolveContext({ ticketId, repoId })
+  const language = resolveLanguage(ctx.rootDir)
   ensureFeatureDir(ctx)
 
   const result = scaffoldFromTemplate({
@@ -80,16 +85,18 @@ function specify({ ticketId, repoId, force = false }) {
     templateName: 'spec-template.md',
     outputPath: featurePath(ctx, 'spec'),
     variables: ctx.variables,
-    force
+    force,
+    language
   })
 
-  updateActive(ctx.repoDir, { phase: 'specify' })
+  updateActive(ctx.repoDir, { phase: 'specify', language })
 
-  return { ctx, result }
+  return { ctx, result, language }
 }
 
 function plan({ ticketId, repoId, force = false }) {
   const ctx = resolveContext({ ticketId, repoId })
+  const language = resolveLanguage(ctx.rootDir)
   ensureFeatureDir(ctx)
   ensureFile(ctx, 'spec')
 
@@ -98,16 +105,18 @@ function plan({ ticketId, repoId, force = false }) {
     templateName: 'plan-template.md',
     outputPath: featurePath(ctx, 'plan'),
     variables: ctx.variables,
-    force
+    force,
+    language
   })
 
-  updateActive(ctx.repoDir, { phase: 'plan' })
+  updateActive(ctx.repoDir, { phase: 'plan', language })
 
-  return { ctx, result }
+  return { ctx, result, language }
 }
 
 function tasks({ ticketId, repoId, force = false }) {
   const ctx = resolveContext({ ticketId, repoId })
+  const language = resolveLanguage(ctx.rootDir)
   ensureFeatureDir(ctx)
   ensureFile(ctx, 'plan')
 
@@ -116,12 +125,13 @@ function tasks({ ticketId, repoId, force = false }) {
     templateName: 'tasks-template.md',
     outputPath: featurePath(ctx, 'tasks'),
     variables: ctx.variables,
-    force
+    force,
+    language
   })
 
-  updateActive(ctx.repoDir, { phase: 'tasks' })
+  updateActive(ctx.repoDir, { phase: 'tasks', language })
 
-  return { ctx, result }
+  return { ctx, result, language }
 }
 
 function parseTasks(content) {

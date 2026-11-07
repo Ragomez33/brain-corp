@@ -21,33 +21,20 @@ const {
   writeSystemMap
 } = require('./lib/system-map')
 
+const { t } = require('./lib/i18n')
+
 const ROLE_LABELS = {
-  provider: 'provider (provee datos/API a otros sidecars)',
-  client: 'client (consume datos/API de un provider)',
-  standalone: 'standalone (opera de forma autónoma)'
+  provider: 'setup.roleProvider',
+  client: 'setup.roleClient',
+  standalone: 'setup.roleStandalone'
+}
+
+function roleLabel(role) {
+  return t(ROLE_LABELS[role])
 }
 
 function printHelp() {
-  console.log(`brain-corp setup-wizard
-
-Uso:
-  node scripts/setup-wizard.js [opciones]
-
-Opciones:
-  --manual   Omite la API de GitHub y registra repositorios por URL o ruta local.
-  --force    Vuelve a preguntar aunque ya existan sidecars configurados.
-  --help     Muestra esta ayuda.
-
-Flujo:
-  1. Consulta todos los repositorios accesibles (personales y de organizaciones) con:
-     gh api --paginate user/repos?per_page=100 --jq "<campos>"
-  2. Si hay muchos repositorios, permite filtrar por organización.
-  3. Muestra un menú multi-select: flechas para moverte, espacio para marcar
-     y Enter para confirmar.
-  4. Permite asignar rol (provider | client | standalone) a cada seleccionado.
-  5. Genera config/system-map.json con rutas sidecars/<nombre-repo>.
-  6. Ofrece clonar con "gh repo clone <owner/repo> <ruta>".
-  Si gh no está autenticado o falla, el wizard continúa en modo manual.`)
+  console.log(t('setup.help'))
 }
 
 function parseArgs(argv) {
@@ -57,7 +44,7 @@ function parseArgs(argv) {
     if (current === '--manual') args.manual = true
     else if (current === '--force') args.force = true
     else if (current === '--help' || current === '-h') args.help = true
-    else throw new Error(`Argumento no reconocido: ${current}`)
+    else throw new Error(t('setup.unknownArg', { arg: current }))
   }
 
   return args
@@ -71,13 +58,13 @@ async function ask(rl, question, defaultValue = '') {
 
 async function chooseRole(rl) {
   const choices = ROLES.map(role => ({
-    name: ROLE_LABELS[role],
+    name: roleLabel(role),
     value: role
   }))
 
   if (isInteractiveTerminal()) {
     const selected = await promptSelection(rl, {
-      message: 'Rol del sidecar',
+      message: t('setup.rolePrompt'),
       choices,
       pageSize: ROLES.length,
       multiple: false,
@@ -87,12 +74,12 @@ async function chooseRole(rl) {
     return selected ? selected.value : 'standalone'
   }
 
-  console.log('\nRol del sidecar:')
+  console.log(`\n${t('setup.roleHeading')}`)
   ROLES.forEach((role, index) => {
-    console.log(`  ${index + 1}. ${ROLE_LABELS[role]}`)
+    console.log(`  ${index + 1}. ${roleLabel(role)}`)
   })
 
-  const answer = await ask(rl, 'Selecciona una opción', '3')
+  const answer = await ask(rl, t('setup.selectOption'), '3')
   const index = Number(answer)
 
   if (Number.isInteger(index) && index >= 1 && index <= ROLES.length) {
@@ -102,7 +89,7 @@ async function chooseRole(rl) {
   const direct = normalizeRole(answer)
   if (direct) return direct
 
-  console.log('  Opción no reconocida; se usará "standalone".')
+  console.log(t('setup.roleFallback'))
   return 'standalone'
 }
 
@@ -125,7 +112,7 @@ function parseSelection(input, count) {
       const end = Number(range[2])
 
       if (start < 1 || end > count || start > end) {
-        throw new Error(`Rango fuera de la lista: ${part}`)
+        throw new Error(t('setup.rangeOutOfList', { part }))
       }
 
       for (let index = start; index <= end; index += 1) {
@@ -138,7 +125,7 @@ function parseSelection(input, count) {
     const index = Number(part)
 
     if (!Number.isInteger(index) || index < 1 || index > count) {
-      throw new Error(`Selección inválida: ${part}`)
+      throw new Error(t('setup.invalidSelection', { part }))
     }
 
     selected.add(index - 1)
@@ -148,10 +135,10 @@ function parseSelection(input, count) {
 }
 
 function printGithubRepositories(repositories) {
-  console.log('\nRepositorios disponibles en GitHub:')
+  console.log(`\n${t('setup.githubReposHeading')}`)
 
   repositories.forEach((repository, index) => {
-    const visibility = repository.isPrivate ? 'privado' : 'público'
+    const visibility = repository.isPrivate ? t('setup.private') : t('setup.public')
     const owner = repository.owner ? ` · ${repository.owner}` : ''
     console.log(
       `  ${String(index + 1).padStart(2, ' ')}. ${repository.nameWithOwner || repository.name}`
@@ -163,10 +150,10 @@ function printGithubRepositories(repositories) {
 async function selectGithubRepositories(rl, repositories) {
   if (isInteractiveTerminal()) {
     const selected = await promptSelection(rl, {
-      message: `Selecciona repositorios (${repositories.length} disponibles)`,
+      message: t('setup.selectReposPrompt', { count: repositories.length }),
       choices: repositories.map(repository => ({
         name: `${repository.nameWithOwner || repository.name}${
-          repository.isPrivate ? ' [privado]' : ''
+          repository.isPrivate ? ` [${t('setup.private')}]` : ''
         }`,
         value: repository
       })),
@@ -184,7 +171,7 @@ async function selectGithubRepositories(rl, repositories) {
   while (true) {
     const answer = await ask(
       rl,
-      '\nSelecciona repositorios por número (ej. 1,3-5), "todos", "ninguno" o "manual"',
+      t('setup.manualSelectionPrompt'),
       'manual'
     )
 
@@ -207,9 +194,12 @@ async function filterRepositoriesByOwner(rl, repositories) {
 
   if (isInteractiveTerminal()) {
     const choice = await promptSelection(rl, {
-      message: `${repositories.length} repositorios de ${owners.length} organizaciones. Filtra por organización`,
+      message: t('setup.filterOwnersPrompt', {
+        repos: repositories.length,
+        owners: owners.length
+      }),
       choices: [
-        { name: 'Todas las organizaciones', value: null },
+        { name: t('setup.allOwners'), value: null },
         ...owners.map(owner => ({ name: owner, value: owner }))
       ],
       pageSize: 12,
@@ -220,13 +210,13 @@ async function filterRepositoriesByOwner(rl, repositories) {
     return repositories.filter(repository => repository.owner === choice.value)
   }
 
-  console.log('\nOrganizaciones encontradas:')
-  console.log('   0. Todas')
+  console.log(`\n${t('setup.ownersHeading')}`)
+  console.log(`   0. ${t('setup.allOwners')}`)
   owners.forEach((owner, index) => {
     console.log(`  ${String(index + 1).padStart(2, ' ')}. ${owner}`)
   })
 
-  const answer = await ask(rl, 'Filtra por organización (número o vacío para todas)', 'todas')
+  const answer = await ask(rl, t('setup.filterOwnersInput'), 'todas')
   const index = Number(answer)
 
   if (!Number.isInteger(index) || index < 1 || index > owners.length) {
@@ -263,7 +253,7 @@ async function collectGithubRepositories(
   const assigned = [...existingRepositories]
 
   for (const repository of repositories) {
-    const visibility = repository.isPrivate ? 'privado' : 'público'
+    const visibility = repository.isPrivate ? t('setup.private') : t('setup.public')
     console.log(
       `\n${repository.nameWithOwner || repository.name} (${visibility})`
     )
@@ -278,14 +268,18 @@ async function collectGithubRepositories(
 
     if (conflict) {
       console.warn(
-        `  Conflicto de nombre: ${mapped.nameWithOwner || mapped.name} ya está representado por ${conflict.nameWithOwner || conflict.path}. Se omite para mantener sidecars/${mapped.id}.`
+        t('setup.conflict', {
+          name: mapped.nameWithOwner || mapped.name,
+          existing: conflict.nameWithOwner || conflict.path,
+          id: mapped.id
+        })
       )
       continue
     }
 
     assigned.push(mapped)
     selected.push(mapped)
-    console.log(`  Asignado: ${mapped.id} (${mapped.role}) -> ${mapped.path}`)
+    console.log(t('setup.assigned', { id: mapped.id, role: mapped.role, path: mapped.path }))
   }
 
   return selected
@@ -296,11 +290,11 @@ async function collectManualRepositories(rl, rootDir, existingRepositories = [])
   const assigned = [...existingRepositories]
 
   console.log(
-    '\nRegistro manual: usa una URL de GitHub (https://github.com/owner/repo o git@github.com:owner/repo.git) o una ruta local existente.'
+    `\n${t('setup.manualHeading')}`
   )
 
   while (true) {
-    const input = await ask(rl, '\nURL de GitHub o ruta local (vacío para terminar)')
+    const input = await ask(rl, `\n${t('setup.manualInputPrompt')}`)
     if (!input) break
 
     try {
@@ -317,14 +311,22 @@ async function collectManualRepositories(rl, rootDir, existingRepositories = [])
 
       if (conflict) {
         console.warn(
-          `  Conflicto de nombre: ${repository.nameWithOwner || repository.name} ya está representado por ${conflict.nameWithOwner || conflict.path}. Se omite para mantener sidecars/${repository.id}.`
+          t('setup.conflict', {
+            name: repository.nameWithOwner || repository.name,
+            existing: conflict.nameWithOwner || conflict.path,
+            id: repository.id
+          })
         )
         continue
       }
 
       assigned.push(repository)
       selected.push(repository)
-      console.log(`  Registrado: ${repository.id} (${repository.role}) -> ${repository.path}`)
+      console.log(t('setup.registered', {
+        id: repository.id,
+        role: repository.role,
+        path: repository.path
+      }))
     } catch (error) {
       console.log(`  ${error.message}`)
     }
@@ -335,24 +337,24 @@ async function collectManualRepositories(rl, rootDir, existingRepositories = [])
 
 async function chooseRepositories(rl, rootDir, manualOnly, existingRepositories = []) {
   if (manualOnly) {
-    console.log('\nModo manual activado (--manual).')
+    console.log(`\n${t('setup.manualMode')}`)
     return collectManualRepositories(rl, rootDir, existingRepositories)
   }
 
   let available
 
   try {
-    console.log('\nConsultando todos los repositorios accesibles con GitHub CLI...')
+    console.log(`\n${t('setup.queryingGithub')}`)
     available = ecosystem.listGithubRepositories({ rootDir, perPage: 100 })
   } catch (error) {
-    console.warn(`\n[setup-wizard] No se pudo consultar GitHub: ${error.message}`)
-    console.warn('Se continúa con el registro manual por URL o ruta local.')
+    console.warn(`\n${t('setup.githubQueryError', { error: error.message })}`)
+    console.warn(t('setup.continueManual'))
     return collectManualRepositories(rl, rootDir, existingRepositories)
   }
 
   if (available.length === 0) {
-    console.log('\nGitHub no devolvió repositorios para esta cuenta.')
-    console.log('Se continúa con el registro manual por URL o ruta local.')
+    console.log(`\n${t('setup.githubNoRepos')}`)
+    console.log(t('setup.continueManual'))
     return collectManualRepositories(rl, rootDir, existingRepositories)
   }
 
@@ -372,7 +374,7 @@ async function chooseRepositories(rl, rootDir, manualOnly, existingRepositories 
 
   const addManual = await confirm(
     rl,
-    '\n¿Añadir también algún repositorio por URL o ruta local?',
+    `\n${t('setup.addManualPrompt')}`,
     false
   )
 
@@ -415,34 +417,34 @@ async function maybeCloneRepositories(rl, repositories, rootDir) {
 
   if (!ghStatus.ok) {
     console.log(
-      '\n[setup-wizard] gh no está disponible o no tiene sesión activa; se omite el clonado automático.'
+      `\n${t('setup.ghUnavailableClone')}`
     )
     return
   }
 
-  console.log('\nRepositorios seleccionados sin copia local:')
+  console.log(`\n${t('setup.reposWithoutLocal')}`)
   for (const repository of missing) {
     console.log(`  - ${repository.nameWithOwner} -> ${repository.path}`)
   }
 
   const clone = await confirm(
     rl,
-    '\n¿Clonarlos ahora con "gh repo clone"?',
+    `\n${t('setup.clonePrompt')}`,
     true
   )
 
   if (!clone) return
 
   for (const repository of missing) {
-    console.log(`\nClonando ${repository.nameWithOwner} en ${repository.path}...`)
+    console.log(`\n${t('setup.cloning', { repo: repository.nameWithOwner, path: repository.path })}`)
     const result = ecosystem.cloneRepository({ repository, rootDir })
 
     if (result.ok && result.skipped) {
-      console.log('  Ya existía localmente; se omite.')
+      console.log(t('setup.cloneExists'))
     } else if (result.ok) {
-      console.log('  Clonado correctamente.')
+      console.log(t('setup.cloneOk'))
     } else {
-      console.warn(`  No se pudo clonar: ${result.error}`)
+      console.warn(t('setup.cloneError', { error: result.error }))
     }
   }
 }
@@ -495,17 +497,17 @@ function buildUpdatedMap(current, repositories) {
 
 function printSummary(repositories) {
   if (repositories.length === 0) {
-    console.log('\nNo hay sidecars registrados en config/system-map.json.')
+    console.log(`\n${t('setup.noSidecars')}`)
     return
   }
 
-  console.log('\nSidecars registrados:')
+  console.log(`\n${t('setup.registeredHeading')}`)
 
   for (const repository of repositories) {
     console.log(`  - ${repository.id}`)
-    console.log(`      Rol:    ${repository.role}`)
-    console.log(`      Ruta:   ${repository.path}`)
-    console.log(`      Origen: ${repository.remote || repository.source || 'local'}`)
+    console.log(`      ${t('setup.roleLabel')}:   ${repository.role}`)
+    console.log(`      ${t('setup.pathLabel')}:   ${repository.path}`)
+    console.log(`      ${t('setup.originLabel')}: ${repository.remote || repository.source || 'local'}`)
   }
 }
 
@@ -520,19 +522,19 @@ async function runSetupWizard({
   force = false,
   map = null
 } = {}) {
-  if (!rl) throw new Error('runSetupWizard requiere una interfaz readline activa.')
+  if (!rl) throw new Error(t('setup.readlineRequired'))
 
   const current = map || readSystemMap(rootDir)
   let repositories = getRegisteredRepositories(current)
 
-  console.log('\n=== brain-corp · Onboarding de sidecars ===\n')
+  console.log(`\n${t('setup.onboardingTitle')}\n`)
 
   const provisioned = provisionCoreAssets({ workspaceDir: rootDir })
   const createdAssets = provisioned.filter(result => result.created).length
 
   if (createdAssets > 0) {
     console.log(
-      `[setup-wizard] Assets base desplegados: ${createdAssets} archivo(s) nuevos en .agents/, .brain/templates/ y comandos.`
+      t('setup.assetsDeployed', { count: createdAssets })
     )
   }
 
@@ -540,9 +542,9 @@ async function runSetupWizard({
   const configured = repositories.length > 0
 
   if (configured && !clean && !force) {
-    console.log('Ya hay sidecars configurados en config/system-map.json.')
+    console.log(t('setup.alreadyConfigured'))
 
-    const add = await confirm(rl, '¿Registrar sidecars adicionales?', false)
+    const add = await confirm(rl, t('setup.addSidecarsPrompt'), false)
 
     if (!add) {
       printSummary(repositories)
@@ -551,13 +553,13 @@ async function runSetupWizard({
   } else {
     const register = await confirm(
       rl,
-      '\n¿Deseas registrar repositorios/sidecars en este workspace?',
+      `\n${t('setup.registerPrompt')}`,
       true
     )
 
     if (!register) {
       if (!configured) {
-        console.log('\nWorkspace inicializado sin sidecars. Podrás registrarlos luego con "brain setup".')
+        console.log(`\n${t('setup.workspaceNoSidecars')}`)
       }
       return current
     }
@@ -565,7 +567,7 @@ async function runSetupWizard({
     if (configured) {
       const replace = await confirm(
         rl,
-        'La configuración actual parece no corresponder a este workspace. ¿Reemplazar la lista de sidecars?',
+        t('setup.replacePrompt'),
         clean
       )
 
@@ -582,7 +584,7 @@ async function runSetupWizard({
   writeSystemMap(rootDir, next)
 
   printSummary(repositories)
-  console.log('\nSiguiente paso: "brain init" o "npm run init-brain".')
+  console.log(`\n${t('setup.nextStep')}`)
 
   return next
 }

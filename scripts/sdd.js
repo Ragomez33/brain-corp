@@ -3,6 +3,7 @@
 const path = require('node:path')
 const engine = require('./lib/brain/engine')
 const { updateActive } = require('./lib/brain/state')
+const { t } = require('./lib/i18n')
 
 const COMMANDS = ['init-work', 'specify', 'plan', 'tasks', 'implement', 'analyze']
 
@@ -12,27 +13,7 @@ function fail(message) {
 }
 
 function printHelp() {
-  console.log(`brain SDD (.brain/)
-
-Uso:
-  node scripts/sdd.js <comando> <TICK-XXX> [opciones]
-
-Comandos:
-  init-work   Crea .brain/features/<ticket>/ y el contrato si cruza sidecars.
-  specify     Genera spec.md en formato EARS.
-  plan        Genera plan.md.
-  tasks       Genera tasks.md.
-  implement   Guía la ejecución de tareas (checkpoint o batch).
-  analyze     Audita coherencia y detecta spec drift.
-
-Opciones:
-  --repo <id>        Repositorio base (obligatorio si el ticket es "shared").
-  --force            Sobrescribe el archivo de la fase si ya existe.
-  --mode <modo>      implement: checkpoint (default) | batch.
-  --complete <TID>   implement: marca una tarea como completada.
-  --no-write         analyze: no escribe analysis.md.
-  --json             Salida JSON.
-  --help             Muestra esta ayuda.`)
+  console.log(t('sdd.help'))
 }
 
 function parseArgs(argv) {
@@ -54,7 +35,9 @@ function parseArgs(argv) {
     const current = argv[index]
     const next = () => {
       const value = argv[index + 1]
-      if (value === undefined || value.startsWith('--')) fail(`Falta el valor para ${current}`)
+      if (value === undefined || value.startsWith('--')) {
+        fail(t('sdd.failMissingValue', { option: current }))
+      }
       index += 1
       return value
     }
@@ -66,7 +49,7 @@ function parseArgs(argv) {
     else if (current === '--no-write') args.write = false
     else if (current === '--json') args.json = true
     else if (current === '--help' || current === '-h') args.help = true
-    else if (current.startsWith('-')) fail(`Opción desconocida: ${current}`)
+    else if (current.startsWith('-')) fail(t('sdd.failUnknownOption', { option: current }))
     else positional.push(current)
   }
 
@@ -111,36 +94,46 @@ function printResult(command, result, args) {
 
   if (command === 'init-work') {
     const { ctx, templates, contract } = result
-    console.log(`[sdd] Feature ${ctx.ticketId} inicializada en ${path.relative(process.cwd(), ctx.featureDir)}`)
-    console.log(`[sdd] Repositorio: ${ctx.repository.id} (${ctx.targetDomain})`)
-    console.log(`[sdd] Plantillas: ${templates.created.length} nuevas, ${templates.skipped.length} existentes.`)
+    console.log(
+      t('sdd.featureInitialized', {
+        ticket: ctx.ticketId,
+        dir: path.relative(process.cwd(), ctx.featureDir)
+      })
+    )
+    console.log(t('sdd.repository', { repo: ctx.repository.id, domain: ctx.targetDomain }))
+    console.log(
+      t('sdd.templates', {
+        created: templates.created.length,
+        skipped: templates.skipped.length
+      })
+    )
     if (ctx.contractRequired) {
       console.log(
-        contract && contract.created
-          ? '[sdd] contract.md generado (integración entre sidecars detectada).'
-          : '[sdd] contract.md ya existía.'
+        contract && contract.created ? t('sdd.contractCreated') : t('sdd.contractExists')
       )
     }
-    console.log(`[sdd] Siguiente: brain specify ${ctx.ticketId}`)
+    console.log(t('sdd.nextInit', { ticket: ctx.ticketId }))
     return
   }
 
   if (command === 'specify' || command === 'plan' || command === 'tasks') {
     const { ctx, result: output } = result
     const file = path.relative(process.cwd(), output.path)
-    console.log(output.created ? `[sdd] Generado ${file}` : `[sdd] Ya existe ${file} (usa --force para regenerar).`)
+    console.log(output.created ? t('sdd.generated', { file }) : t('sdd.exists', { file }))
     const nextCommand = { specify: 'plan', plan: 'tasks', tasks: 'implement' }[command]
-    if (nextCommand) console.log(`[sdd] Siguiente: brain ${nextCommand} ${ctx.ticketId}`)
+    if (nextCommand) {
+      console.log(t('sdd.next', { command: nextCommand, ticket: ctx.ticketId }))
+    }
     return
   }
 
   if (command === 'implement') {
     if (result.mode === 'batch') {
       if (result.pending.length === 0) {
-        console.log('[sdd] No quedan tareas pendientes.')
+        console.log(t('sdd.noPending'))
         return
       }
-      console.log(`[sdd] Batch: ${result.pending.length} tarea(s) pendientes.`)
+      console.log(t('sdd.batchPending', { count: result.pending.length }))
       for (const item of result.pending) {
         console.log(`  - ${item.id}${item.parallel ? ' [P]' : ''} ${item.description}`)
       }
@@ -148,30 +141,44 @@ function printResult(command, result, args) {
     }
 
     if (result.completedTask) {
-      console.log(`[sdd] Tarea ${result.completedTask} marcada como completada.`)
+      console.log(t('sdd.taskCompleted', { task: result.completedTask }))
     }
 
     if (!result.next) {
-      console.log('[sdd] No quedan tareas pendientes.')
+      console.log(t('sdd.noPending'))
       return
     }
 
-    console.log(`[sdd] Siguiente tarea: ${result.next.id}${result.next.parallel ? ' [P]' : ''}`)
+    console.log(
+      t('sdd.nextTask', {
+        id: `${result.next.id}${result.next.parallel ? ' [P]' : ''}`
+      })
+    )
     console.log(`  ${result.next.description}`)
-    console.log(`[sdd] Al terminar: brain implement ${result.ctx.ticketId} --complete ${result.next.id}`)
+    console.log(
+      t('sdd.completeHint', { ticket: result.ctx.ticketId, id: result.next.id })
+    )
     return
   }
 
   if (command === 'analyze') {
     const { ctx, report } = result
-    console.log(`[sdd] Análisis ${ctx.ticketId}: ${report.status.toUpperCase()}`)
+    console.log(t('sdd.analysisStatus', { ticket: ctx.ticketId, status: report.status.toUpperCase() }))
     console.log(
-      `[sdd] Requisitos: ${report.requirements} · tareas: ${report.tasks.done}/${report.tasks.total} completadas.`
+      t('sdd.analysisMetrics', {
+        requirements: report.requirements,
+        done: report.tasks.done,
+        total: report.tasks.total
+      })
     )
     for (const item of report.errors) console.log(`  ERROR: ${item}`)
     for (const item of report.warnings) console.log(`  WARN:  ${item}`)
     if (args.write) {
-      console.log(`[sdd] Reporte: ${path.relative(process.cwd(), path.join(ctx.featureDir, 'analysis.md'))}`)
+      console.log(
+        t('sdd.analysisReport', {
+          file: path.relative(process.cwd(), path.join(ctx.featureDir, 'analysis.md'))
+        })
+      )
     }
   }
 }
@@ -186,11 +193,11 @@ function main() {
   }
 
   if (!COMMANDS.includes(args.command)) {
-    fail(`Comando no reconocido: ${args.command}. Usa: ${COMMANDS.join(', ')}.`)
+    fail(t('sdd.unknownCommand', { name: args.command, commands: COMMANDS.join(', ') }))
   }
 
   if (!args.ticketId) {
-    fail(`Falta el ticket para "${args.command}". Uso: brain ${args.command} TICK-XXX.`)
+    fail(t('sdd.missingTicket', { command: args.command }))
   }
 
   let result

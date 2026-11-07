@@ -14,17 +14,18 @@ const {
   moveTicket
 } = require('./lib/tickets')
 const { getRegisteredRepositories, readSystemMap } = require('./lib/system-map')
+const { t } = require('./lib/i18n')
 
 function describeDomainImpact(domain) {
   if (domain === 'shared') {
-    return 'contratos compartidos entre sidecars, mapeo de datos y posibles integraciones.'
+    return t('normalize.sharedImpact')
   }
 
   const repository = getRegisteredRepositories(readSystemMap(ROOT_DIR)).find(
     item => item.id === domain
   )
 
-  if (!repository) return `repositorio \`${domain}\`.`
+  if (!repository) return t('normalize.repoImpact', { repo: domain })
 
   const role = repository.role ? ` (${repository.role})` : ''
   const stack =
@@ -32,7 +33,11 @@ function describeDomainImpact(domain) {
       ? `: ${repository.stack.join(', ')}`
       : ''
 
-  return `repositorio \`${repository.name || repository.id}\`${role}${stack}.`
+  return t('normalize.repoImpactDetail', {
+    repo: repository.name || repository.id,
+    role,
+    stack
+  })
 }
 
 function fail(message) {
@@ -69,7 +74,7 @@ function parseArgs(argv) {
       args.file = argv[index + 1]
       index += 1
     } else {
-      fail(`Argumento no reconocido: ${current}`)
+      fail(t('normalize.unknownArg', { arg: current }))
     }
   }
 
@@ -102,21 +107,21 @@ function listPending({ json }) {
   }
 
   if (pending.length === 0) {
-    console.log('[normalize-ticket] No hay tickets con status "needs_formatting".')
+    console.log(t('normalize.none'))
     return
   }
 
-  console.log(`[normalize-ticket] ${pending.length} ticket(s) pendiente(s):\n`)
+  console.log(t('normalize.pending', { count: pending.length }))
 
   for (const ticket of pending) {
     const issue = inferIssueNumber(ticket.filePath, ticket.data)
     const domain = inferTargetDomain(`${ticket.data.title || ''}\n${ticket.content}`)
 
     console.log(`- ${path.relative(ROOT_DIR, ticket.filePath)}`)
-    console.log(`  issue: ${issue ? `#${issue}` : 'sin issue'}`)
-    console.log(`  título: ${ticket.data.title || '(sin título)'}`)
-    console.log(`  domain inferido: ${domain}`)
-    console.log(`  preview: ${ticket.content.trim().slice(0, 140).replace(/\n/g, ' ')}`)
+    console.log(`  ${t('normalize.issue')}: ${issue ? `#${issue}` : t('normalize.noIssue')}`)
+    console.log(`  ${t('normalize.title')}: ${ticket.data.title || t('normalize.noTitle')}`)
+    console.log(`  ${t('normalize.domain')}: ${domain}`)
+    console.log(`  ${t('normalize.preview')}: ${ticket.content.trim().slice(0, 140).replace(/\n/g, ' ')}`)
   }
 }
 
@@ -182,11 +187,11 @@ function pushFile(filePath) {
   const issueNumber = inferIssueNumber(absolutePath, ticket.data)
 
   if (!issueNumber) {
-    fail(`No se pudo determinar el número de issue para ${filePath}`)
+    fail(t('normalize.noIssueNumber', { file: filePath }))
   }
 
   runGh(['issue', 'edit', String(issueNumber), '--body-file', absolutePath])
-  console.log(`[normalize-ticket] Issue #${issueNumber} actualizado desde ${path.relative(ROOT_DIR, absolutePath)}.`)
+  console.log(t('normalize.issueUpdated', { issue: issueNumber, file: path.relative(ROOT_DIR, absolutePath) }))
 }
 
 function main() {
@@ -207,7 +212,7 @@ function main() {
     : pendingTickets()
 
   if (pending.length === 0) {
-    console.log('[normalize-ticket] No hay tickets con status "needs_formatting".')
+    console.log(t('normalize.none'))
     return
   }
 
@@ -222,18 +227,27 @@ function main() {
 
       normalized += 1
       console.log(
-        `[normalize-ticket] ${path.relative(ROOT_DIR, result.path)} -> ${result.domain}${result.pushed ? ` (issue #${result.issueNumber} actualizado)` : ''}`
+        t('normalize.normalized', {
+          file: path.relative(ROOT_DIR, result.path),
+          domain: result.domain,
+          suffix: result.pushed
+            ? t('normalize.issueSuffix', { issue: result.issueNumber })
+            : ''
+        })
       )
     } catch (error) {
       failed += 1
       console.error(
-        `[normalize-ticket] ${path.relative(ROOT_DIR, ticket.filePath)}: error -> ${error.message}`
+        t('normalize.itemError', {
+          file: path.relative(ROOT_DIR, ticket.filePath),
+          error: error.message
+        })
       )
     }
   }
 
   console.log(
-    `[normalize-ticket] Resumen: ${normalized} normalizados, ${failed} con error.`
+    t('normalize.summary', { normalized, failed })
   )
 
   if (failed > 0) process.exitCode = 1

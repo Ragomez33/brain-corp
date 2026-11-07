@@ -19,6 +19,7 @@ const {
   writeTicket,
   moveTicket
 } = require('./lib/tickets')
+const { t } = require('./lib/i18n')
 
 const BRAINRC_PATH = path.join(ROOT_DIR, '.brainrc.json')
 
@@ -53,7 +54,7 @@ function parseArgs(argv) {
       args.limit = Number(argv[index + 1])
       index += 1
     } else {
-      fail(`Argumento no reconocido: ${current}`)
+      fail(t('syncpull.unknownArg', { arg: current }))
     }
   }
 
@@ -66,7 +67,7 @@ function readBrainConfig() {
   try {
     return JSON.parse(fs.readFileSync(BRAINRC_PATH, 'utf8'))
   } catch (error) {
-    fail(`.brainrc.json no es JSON válido: ${error.message}`)
+    fail(t('syncpull.badConfig', { error: error.message }))
   }
 }
 
@@ -74,7 +75,7 @@ function validateGh() {
   try {
     runGh(['auth', 'status'])
   } catch {
-    fail('El CLI de GitHub no tiene una sesión activa. Ejecuta "gh auth login".')
+    fail(t('syncpull.ghSession'))
   }
 }
 
@@ -225,7 +226,11 @@ function main() {
       if (result.changed) {
         updated += 1
         console.log(
-          `[sync-pull] #${issue.number}: actualizado a "${result.status}" -> ${path.relative(ROOT_DIR, result.path || existing.filePath)}`
+          t('syncpull.updated', {
+            issue: issue.number,
+            status: result.status,
+            path: path.relative(ROOT_DIR, result.path || existing.filePath)
+          })
         )
       } else {
         unchanged += 1
@@ -238,12 +243,22 @@ function main() {
     created += 1
 
     console.log(
-      `[sync-pull] #${issue.number}: nuevo ticket "${result.status}"${result.strict ? '' : ' (needs_formatting)'} -> ${path.relative(ROOT_DIR, result.path)}`
+      t('syncpull.newTicket', {
+        issue: issue.number,
+        status: result.status,
+        suffix: result.strict ? '' : t('syncpull.newTicketSuffix'),
+        path: path.relative(ROOT_DIR, result.path)
+      })
     )
   }
 
   console.log(
-    `[sync-pull] Resumen: ${created} creados, ${updated} actualizados, ${unchanged} sin cambios (${issues.length} issues en GitHub).`
+    t('syncpull.summary', {
+      created,
+      updated,
+      unchanged,
+      issues: issues.length
+    })
   )
 }
 

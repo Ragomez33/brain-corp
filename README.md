@@ -56,6 +56,14 @@ Al elegir el agente, `brain init` aprovisiona automáticamente el workspace:
 
 Al terminar, abre el agente configurado.
 
+#### Idioma / Language
+
+`brain init` pregunta `Select your preferred language / Selecciona tu idioma` y guarda `language` en `.brain/config.json`.
+
+- **Plantillas base:** `templates/brain/en/` es el valor por defecto y garantiza la máxima precisión con modelos de IA. `templates/brain/es/` está disponible cuando se elige español.
+- **Constitución:** `.brain/memory/constitution.md` se mantiene en inglés como fuente canónica.
+- **Artefactos:** `spec.md`, `plan.md`, `tasks.md` y `contract.md` se generan con la plantilla del idioma configurado, y los comandos indican al agente redactar en ese idioma.
+
 ### 2. Sincronización con GitHub Issues
 
 - `npm run sync` — ejecuta el sanity check previo y publica los tickets de `.agents/tickets/backlog/` como issues, escribiendo el `github_issue` en el frontmatter. Si el sanity check falla, aborta; usa `--skip-sanity` para forzarlo.
@@ -120,6 +128,7 @@ Flujo:
 npm install
 npm run setup         # detectar repos con gh, asignar roles y generar sidecars/<repo>
 npm run init-brain    # onboarding + sesión + watcher opcional + lanza el agente
+npm run init-brain -- --lang es   # fijar idioma sin preguntar (en | es)
 npm run agents:sync   # re-desplegar prompts, skills y comandos del motor de agente
 npm run sync:pull     # importar issues a tickets
 npm run sync          # publicar tickets como issues
@@ -157,8 +166,36 @@ brain hotfix --title "..." --domain <sidecar> --module <módulo> --spec-impact n
 
 En un workspace limpio, el wizard **no incluye ningún proyecto por defecto**: la topología se construye a partir de los repositorios que selecciones. Si `gh` no está autenticado o falla, el registro manual por URL/ruta local es el fallback. El wizard también ofrece clonar los repositorios seleccionados con `gh repo clone`.
 
+## Auditorías Enterprise
+
+La suite de auditorías avanzadas vive en `src/modules/audit/` (TypeScript) y **exige una licencia Enterprise válida** antes de procesar el repositorio.
+
+```bash
+brain audit dead-code       # exports huérfanos y ahorro estimado de bundle (AST)
+brain audit debt-radar      # TODO/FIXME/any + antigüedad git + fricción entre sidecars
+brain audit contract-guard  # breaking changes en esquemas y contract.md
+brain audit security-scan   # requisitos EARS vs controles de seguridad en el código
+```
+
+Opciones: `--root <dir>`, `--repo <id>`, `--ticket <TICK-XXX>`, `--json`.
+
+### Activación de licencia
+
+- `BRAIN_LICENSE_TOKEN` (recomendado en CI).
+- `~/.brain/config.json` con `{ "enterpriseLicense": "<payload>.<firma>" }`.
+- Clave pública Ed25519 en `BRAIN_LICENSE_PUBLIC_KEY`, `BRAIN_LICENSE_PUBLIC_KEY_FILE` o `~/.brain/license-public.pem`.
+
+El token es `base64url(payload).base64url(firma)` firmado con Ed25519. El payload incluye `plan: "enterprise"` (o `features: ["audit:*"]`) y `exp` en segundos. La validación es 100% local: no hay llamadas de red ni secretos embebidos. Sin licencia válida, `brain audit ...` se bloquea y muestra instrucciones de activación.
+
+Si trabajas desde el código fuente, compila antes de usar las auditorías:
+
+```bash
+npm run build   # genera dist/ (incluido en el paquete publicado)
+```
+
 ## Configuración
 
+- **`.brain/config.json`** — preferencias locales del workspace, incluido `language: "en" | "es"`. `brain init` pregunta el idioma y lo guarda aquí. También se puede fijar con `--lang en|es` o `BRAIN_LANG`.
 - **`.brainrc.json`** — estado local: usuario, Project de GitHub, agente por defecto y última sesión. Está en `.gitignore`.
 - **`config/system-map.json`** — topología activa: rutas, roles (`provider`/`client`/`standalone`), stacks, dominios, endpoints, esquemas y relaciones entre sidecars. El template base es neutro (sin sidecars); se puebla con `brain setup`. Es la fuente de verdad estructural.
 - **`config/system-map.example.json`** — mapa poblado de referencia con sidecars provider/client/standalone. Cópialo sobre `system-map.json` si quieres partir de una topología de ejemplo.

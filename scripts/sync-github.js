@@ -5,6 +5,7 @@ const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const matter = require('gray-matter')
 const { runSanityCheck } = require('./lib/sanity')
+const { t } = require('./lib/i18n')
 
 const ROOT_DIR = process.cwd()
 const TICKETS_DIR = path.join(ROOT_DIR, '.agents', 'tickets', 'backlog')
@@ -27,16 +28,14 @@ function fail(message) {
 
 function readBrainConfig() {
   if (!fs.existsSync(BRAINRC_PATH)) {
-    console.warn(
-      '[sync-github] No existe .brainrc.json. Ejecuta "npm run init-brain". Se usarán flags/variables globales si están presentes.'
-    )
+    console.warn(t('sync.configMissing'))
     return {}
   }
 
   try {
     return JSON.parse(fs.readFileSync(BRAINRC_PATH, 'utf8'))
   } catch (error) {
-    fail(`.brainrc.json no es JSON válido: ${error.message}`)
+    fail(t('sync.badConfig', { error: error.message }))
   }
 }
 
@@ -48,7 +47,7 @@ function parseArgs(argv) {
     const next = () => {
       const value = argv[index + 1]
       if (!value || value.startsWith('--')) {
-        fail(`Falta el valor para ${current}`)
+        fail(t('sync.missingValue', { option: current }))
       }
       index += 1
       return value
@@ -58,7 +57,7 @@ function parseArgs(argv) {
     else if (current === '--owner') args.owner = next()
     else if (current === '--repo') args.repo = next()
     else if (current === '--skip-sanity') args.skipSanity = true
-    else fail(`Argumento no reconocido: ${current}`)
+    else fail(t('sync.unknownArg', { arg: current }))
   }
 
   return args
@@ -81,45 +80,43 @@ function validateGhCli() {
   try {
     runGh(['--version'])
   } catch {
-    fail(
-      'No se encontró el CLI de GitHub (gh). Instálalo desde https://cli.github.com/ y ejecuta "gh auth login".'
-    )
+    fail(t('sync.ghMissing'))
   }
 
   try {
     runGh(['auth', 'status'])
   } catch {
-    fail('El CLI de GitHub no tiene una sesión activa. Ejecuta "gh auth login".')
+    fail(t('sync.ghSession'))
   }
 }
 
 function runPreflightSanity(args) {
   if (args.skipSanity || process.env.BRAIN_SKIP_SANITY === '1') {
-    console.warn('[sync-github] Sanity check omitido por configuración explícita.')
+    console.warn(t('sync.sanitySkipped'))
     return
   }
 
   const result = runSanityCheck()
 
   for (const warning of result.warnings) {
-    console.warn(`[sync-github] Sanity WARN: ${warning}`)
+    console.warn(t('sync.sanityWarn', { warning }))
   }
 
   if (!result.ok) {
     const details = result.errors.map(error => `  - ${error}`).join('\n')
     fail(
-      `El sanity check bloqueó la sincronización con ${result.errors.length} error(es):\n${details}\nCorrige los tickets o ejecuta con --skip-sanity.`
+      t('sync.sanityBlocked', { count: result.errors.length, details })
     )
   }
 
   console.log(
-    `[sync-github] Sanity check OK: ${result.totals.backlog} ticket(s) de backlog listos para sync.`
+    t('sync.sanityOk', { count: result.totals.backlog })
   )
 }
 
 function listTicketFiles() {
   if (!fs.existsSync(TICKETS_DIR)) {
-    fail(`No existe el directorio de tickets: ${TICKETS_DIR}`)
+    fail(t('sync.ticketsDirMissing', { dir: TICKETS_DIR }))
   }
 
   return fs
@@ -142,7 +139,7 @@ function ensureLabel(label) {
   try {
     runGh(['label', 'create', label, '--color', color, '--force'])
   } catch (error) {
-    console.warn(`[sync-github] No se pudo asegurar la etiqueta "${label}": ${error.message}`)
+    console.warn(t('sync.labelError', { label, error: error.message }))
   }
 }
 
@@ -170,7 +167,7 @@ function addToProject({ issueUrl, projectNumber, owner }) {
 
   if (!owner) {
     console.warn(
-      '[sync-github] Se solicitó añadir al Project, pero no se pudo determinar el propietario. Usa --owner o GITHUB_PROJECT_OWNER.'
+      t('sync.projectOwnerMissing')
     )
     return
   }
@@ -185,9 +182,9 @@ function addToProject({ issueUrl, projectNumber, owner }) {
       '--url',
       issueUrl
     ])
-    console.log(`[sync-github] Issue añadido al Project ${projectNumber}.`)
+    console.log(t('sync.projectAdded', { project: projectNumber }))
   } catch (error) {
-    console.warn(`[sync-github] No se pudo añadir el issue al Project: ${error.message}`)
+    console.warn(t('sync.projectAddError', { error: error.message }))
   }
 }
 
@@ -206,7 +203,7 @@ function writeIssueNumber(filePath, rawContent, issueNumber) {
   )
 
   if (closeIndex === -1) {
-    throw new Error(`Frontmatter YAML sin cierre en ${filePath}`)
+    throw new Error(t('sync.frontmatterUnclosed', { file: filePath }))
   }
 
   lines.splice(closeIndex, 0, `github_issue: ${issueNumber}`)
@@ -234,14 +231,17 @@ function main() {
 
   if (projectNumber) {
     console.log(
-      `[sync-github] Project configurado: #${projectNumber} (owner: ${projectOwner || 'desconocido'}).`
+      t('sync.projectConfigured', {
+        project: projectNumber,
+        owner: projectOwner || t('sync.ownerUnknown')
+      })
     )
   }
 
   const files = listTicketFiles()
 
   if (files.length === 0) {
-    console.log('[sync-github] No hay tickets en backlog/. Nada que sincronizar.')
+    console.log(t('sync.noTickets'))
     return
   }
 
@@ -256,7 +256,7 @@ function main() {
     const data = parsed.data
 
     if (data.github_issue) {
-      console.log(`[sync-github] ${fileName}: ya tiene issue #${data.github_issue}, se omite.`)
+      console.log(t('sync.alreadyHasIssue', { file: fileName, issue: data.github_issue }))
       skipped += 1
       continue
     }
@@ -272,11 +272,11 @@ function main() {
       const issueNumber = issueUrl ? extractIssueNumber(issueUrl) : null
 
       if (!issueNumber) {
-        throw new Error(`No se pudo extraer el número de issue de la salida de gh: ${output}`)
+        throw new Error(t('sync.issueNumberError', { output }))
       }
 
       writeIssueNumber(filePath, rawContent, issueNumber)
-      console.log(`[sync-github] ${fileName}: issue #${issueNumber} creado (${issueUrl}).`)
+      console.log(t('sync.issueCreated', { file: fileName, issue: issueNumber, url: issueUrl }))
 
       if (issueUrl && projectNumber) {
         const owner = projectOwner || issueUrl.split('/')[3]
@@ -285,13 +285,13 @@ function main() {
 
       created += 1
     } catch (error) {
-      console.error(`[sync-github] ${fileName}: error al crear el issue -> ${error.message}`)
+      console.error(t('sync.issueCreateError', { file: fileName, error: error.message }))
       failed += 1
     }
   }
 
   console.log(
-    `[sync-github] Resumen: ${created} creados, ${skipped} omitidos, ${failed} con error.`
+    t('sync.summary', { created, skipped, failed })
   )
 
   if (failed > 0) {

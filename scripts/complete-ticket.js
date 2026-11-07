@@ -10,6 +10,7 @@ const {
   moveTicket,
   inferIssueNumber
 } = require('./lib/tickets')
+const { t } = require('./lib/i18n')
 
 const DELIVERY_SECTION = '## Entrega'
 
@@ -39,7 +40,7 @@ function parseArgs(argv) {
     const current = argv[index]
     const next = () => {
       const value = argv[index + 1]
-      if (!value || value.startsWith('--')) fail(`Falta el valor para ${current}`)
+      if (!value || value.startsWith('--')) fail(t('complete.missingValue', { option: current }))
       index += 1
       return value
     }
@@ -50,7 +51,7 @@ function parseArgs(argv) {
     else if (current === '--json') args.json = true
     else if (current === '--skip-close') args.skipClose = true
     else if (current === '--dry-run') args.dryRun = true
-    else if (current.startsWith('--')) fail(`Argumento no reconocido: ${current}`)
+    else if (current.startsWith('--')) fail(t('complete.unknownArg', { arg: current }))
     else positionals.push(current)
   }
 
@@ -58,7 +59,7 @@ function parseArgs(argv) {
   if (!args.pr && positionals[1]) args.pr = positionals[1]
 
   if (!args.id) {
-    fail('Debes indicar un ticket. Uso: node scripts/complete-ticket.js TICK-014 [PR]')
+    fail(t('complete.ticketRequired'))
   }
 
   return args
@@ -81,12 +82,12 @@ function findTicket(ticketId) {
   })
 
   if (matches.length === 0) {
-    fail(`No se encontró el ticket ${target} en .agents/tickets/.`)
+    fail(t('complete.notFound', { ticket: target }))
   }
 
   if (matches.length > 1) {
     const paths = matches.map(ticket => path.relative(ROOT_DIR, ticket.filePath)).join('\n  - ')
-    fail(`El ticket ${target} es ambiguo; coincide con varios archivos:\n  - ${paths}`)
+    fail(t('complete.ambiguous', { ticket: target, paths }))
   }
 
   return matches[0]
@@ -135,15 +136,15 @@ function updateDeliverySection(content, { prRef, completedAt }) {
 
 function closeIssue({ issueNumber, prRef, repo, skipClose, dryRun }) {
   if (!issueNumber) {
-    return { closed: false, skipped: true, reason: 'El ticket no tiene github_issue.' }
+    return { closed: false, skipped: true, reason: t('complete.reasonNoIssue') }
   }
 
   if (skipClose) {
-    return { closed: false, skipped: true, reason: 'Cierre omitido con --skip-close.' }
+    return { closed: false, skipped: true, reason: t('complete.reasonSkipClose') }
   }
 
   if (dryRun) {
-    return { closed: false, skipped: true, reason: 'dry-run: no se ejecutó gh issue close.' }
+    return { closed: false, skipped: true, reason: t('complete.reasonDryRun') }
   }
 
   const ghArgs = ['issue', 'close', String(issueNumber), '--reason', 'completed']
@@ -156,7 +157,7 @@ function closeIssue({ issueNumber, prRef, repo, skipClose, dryRun }) {
     return { closed: true, skipped: false }
   } catch (error) {
     if (/already closed/i.test(error.message)) {
-      return { closed: true, skipped: false, reason: 'El issue ya estaba cerrado.' }
+      return { closed: true, skipped: false, reason: t('complete.reasonAlreadyClosed') }
     }
 
     return { closed: false, skipped: false, error: error.message }
@@ -209,14 +210,14 @@ function main() {
   if (args.json) {
     console.log(JSON.stringify(result, null, 2))
   } else {
-    console.log(`[complete-ticket] ${ticketId} marcado como done -> ${result.ticket}`)
-    if (prRef) console.log(`[complete-ticket] PR registrado: ${prRef}`)
+    console.log(t('complete.done', { ticket: ticketId, path: result.ticket }))
+    if (prRef) console.log(t('complete.prRegistered', { pr: prRef }))
     if (closeResult.closed) {
-      console.log(`[complete-ticket] Issue #${issueNumber} cerrado en GitHub.`)
+      console.log(t('complete.issueClosed', { issue: issueNumber }))
     } else if (closeResult.error) {
-      console.error(`[complete-ticket] No se pudo cerrar el issue #${issueNumber}: ${closeResult.error}`)
+      console.error(t('complete.issueCloseError', { issue: issueNumber, error: closeResult.error }))
     } else {
-      console.log(`[complete-ticket] Cierre de issue omitido: ${closeResult.reason}`)
+      console.log(t('complete.issueCloseSkipped', { reason: closeResult.reason }))
     }
   }
 

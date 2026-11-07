@@ -3,6 +3,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { runSanityCheck } = require('./lib/sanity')
+const { t } = require('./lib/i18n')
 
 const asJson = process.argv.includes('--json')
 const shouldWrite = process.argv.includes('--write')
@@ -28,25 +29,29 @@ if (shouldWrite) {
   fs.writeFileSync(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`, 'utf8')
 
   if (!asJson) {
-    console.log(`[sanity-check] Reporte escrito en ${path.relative(process.cwd(), ledgerPath)}`)
+    console.log(t('sanity.reportWritten', { path: path.relative(process.cwd(), ledgerPath) }))
   }
 }
 
 if (asJson) {
   console.log(JSON.stringify(result, null, 2))
 } else {
-  console.log(`[sanity-check] Tickets: ${result.totals.tickets} (backlog: ${result.totals.backlog})`)
+  console.log(t('sanity.tickets', { tickets: result.totals.tickets, backlog: result.totals.backlog }))
 
   for (const warning of result.warnings) {
-    console.warn(`[sanity-check] WARN  ${warning}`)
+    console.warn(t('sanity.warn', { warning }))
   }
 
   for (const error of result.errors) {
-    console.error(`[sanity-check] ERROR ${error}`)
+    console.error(t('sanity.error', { error }))
   }
 
   console.log(
-    `[sanity-check] ${result.ok ? 'READY FOR SYNC' : 'BLOCKED'} — ${result.totals.errors} errores, ${result.totals.warnings} advertencias.`
+    t('sanity.summary', {
+      status: result.ok ? t('sanity.ready') : t('sanity.blocked'),
+      errors: result.totals.errors,
+      warnings: result.totals.warnings
+    })
   )
 }
 

@@ -1,5 +1,6 @@
 const fs = require('node:fs')
 const path = require('node:path')
+const { resolveLanguage } = require('../config')
 
 const PACKAGE_ROOT = path.resolve(__dirname, '..', '..', '..')
 const PACKAGE_TEMPLATES_DIR = path.join(PACKAGE_ROOT, 'templates', 'brain')
@@ -15,6 +16,16 @@ const TEMPLATE_FILES = [
 ]
 
 const MEMORY_FILES = ['constitution.md', 'constitution-template.json']
+const TEMPLATE_LANGUAGES = ['en', 'es']
+
+function normalizeTemplateLanguage(language) {
+  const value = String(language || '').toLowerCase()
+  return TEMPLATE_LANGUAGES.includes(value) ? value : 'en'
+}
+
+function languageDir(language) {
+  return path.join(PACKAGE_TEMPLATES_DIR, normalizeTemplateLanguage(language))
+}
 
 function templatesDir(repoDir) {
   return path.join(repoDir, REPO_TEMPLATES_DIR)
@@ -24,19 +35,20 @@ function memoryDir(workspaceDir) {
   return path.join(workspaceDir, WORKSPACE_MEMORY_DIR)
 }
 
-function ensureTemplates(repoDir, { overwrite = false } = {}) {
+function ensureTemplates(repoDir, { overwrite = false, language } = {}) {
   const target = templatesDir(repoDir)
+  const sourceDir = languageDir(language || resolveLanguage(repoDir))
   fs.mkdirSync(target, { recursive: true })
 
   const created = []
   const skipped = []
 
   for (const file of TEMPLATE_FILES) {
-    const source = path.join(PACKAGE_TEMPLATES_DIR, file)
+    const source = path.join(sourceDir, file)
     const destination = path.join(target, file)
 
     if (!fs.existsSync(source)) {
-      throw new Error(`Falta la plantilla empaquetada: ${file}`)
+      throw new Error(`Missing packaged template: ${file}`)
     }
 
     if (fs.existsSync(destination) && !overwrite) {
@@ -48,7 +60,7 @@ function ensureTemplates(repoDir, { overwrite = false } = {}) {
     created.push(destination)
   }
 
-  return { dir: target, created, skipped }
+  return { dir: target, created, skipped, language: normalizeTemplateLanguage(language) }
 }
 
 function ensureMemory(workspaceDir, { overwrite = false } = {}) {
@@ -63,7 +75,7 @@ function ensureMemory(workspaceDir, { overwrite = false } = {}) {
     const destination = path.join(target, file)
 
     if (!fs.existsSync(source)) {
-      throw new Error(`Falta el archivo de memoria empaquetado: ${file}`)
+      throw new Error(`Missing packaged memory file: ${file}`)
     }
 
     if (fs.existsSync(destination) && !overwrite) {
@@ -78,8 +90,9 @@ function ensureMemory(workspaceDir, { overwrite = false } = {}) {
   return { dir: target, created, skipped }
 }
 
-function provisionBrainAssets(workspaceDir, { overwrite = false } = {}) {
-  const templates = ensureTemplates(workspaceDir, { overwrite })
+function provisionBrainAssets(workspaceDir, { overwrite = false, language } = {}) {
+  const resolvedLanguage = language || resolveLanguage(workspaceDir)
+  const templates = ensureTemplates(workspaceDir, { overwrite, language: resolvedLanguage })
   const memory = ensureMemory(workspaceDir, { overwrite })
 
   return [
@@ -98,30 +111,38 @@ function renderTemplate(content, variables) {
   })
 }
 
-function readPackageTemplate(name) {
-  const file = path.join(PACKAGE_TEMPLATES_DIR, name)
+function readPackageTemplate(name, language) {
+  const file = path.join(languageDir(language), name)
   if (!fs.existsSync(file)) {
-    throw new Error(`Falta la plantilla empaquetada: ${name}`)
+    throw new Error(`Missing packaged template: ${name}`)
   }
   return fs.readFileSync(file, 'utf8')
 }
 
-function scaffoldFromTemplate({ repoDir, templateName, outputPath, variables, force = false }) {
+function scaffoldFromTemplate({
+  repoDir,
+  templateName,
+  outputPath,
+  variables,
+  force = false,
+  language
+}) {
   if (fs.existsSync(outputPath) && !force) {
     return { created: false, path: outputPath }
   }
 
-  ensureTemplates(repoDir)
+  const resolvedLanguage = language || resolveLanguage(repoDir)
+  ensureTemplates(repoDir, { language: resolvedLanguage })
 
   const localTemplate = path.join(templatesDir(repoDir), templateName)
   const raw = fs.existsSync(localTemplate)
     ? fs.readFileSync(localTemplate, 'utf8')
-    : readPackageTemplate(templateName)
+    : readPackageTemplate(templateName, resolvedLanguage)
   const content = renderTemplate(raw, variables)
   fs.mkdirSync(path.dirname(outputPath), { recursive: true })
   fs.writeFileSync(outputPath, content, 'utf8')
 
-  return { created: true, path: outputPath }
+  return { created: true, path: outputPath, language: resolvedLanguage }
 }
 
 module.exports = {
@@ -130,10 +151,13 @@ module.exports = {
   PACKAGE_TEMPLATES_DIR,
   REPO_TEMPLATES_DIR,
   TEMPLATE_FILES,
+  TEMPLATE_LANGUAGES,
   WORKSPACE_MEMORY_DIR,
   ensureMemory,
   ensureTemplates,
+  languageDir,
   memoryDir,
+  normalizeTemplateLanguage,
   provisionBrainAssets,
   readPackageTemplate,
   renderTemplate,

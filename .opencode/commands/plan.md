@@ -27,4 +27,6 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** diseñando el pla
    - Riesgos con mitigación y estrategia de pruebas.
 6. No implementes código en esta fase; el entregable es el plan.
 
+Escribe el plan en el idioma definido por `language` en `.brain/config.json` (por defecto, inglés técnico).
+
 Reporta la ruta de `plan.md` y el siguiente paso: `/tasks`.

@@ -1,7 +1,7 @@
 {
   "version": "1.0.0",
   "kind": "brain-corp/constitution",
-  "description": "Constitución centralizada del motor SDD .brain/. Prevalece sobre cualquier instrucción local que la contradiga.",
+  "description": "Centralized constitution of the .brain/ SDD engine. Prevails over any local instruction that contradicts it.",
   "memory": {
     "constitution": ".brain/memory/constitution.md",
     "template": ".brain/memory/constitution-template.json",
@@ -38,12 +38,12 @@
     "tasks": {
       "requires": ["plan.md"],
       "produces": ["tasks.md"],
-      "taskPattern": "- [ ] TXXX [P] `ruta` Descripción (REQ-XXX)"
+      "taskPattern": "- [ ] TXXX [P] `path` Description (REQ-XXX)"
     },
     "implement": {
       "requires": ["tasks.md"],
       "modes": ["checkpoint", "batch"],
-      "produces": ["código verificado", "tasks.md actualizado"]
+      "produces": ["verified code", "updated tasks.md"]
     },
     "analyze": {
       "requires": ["spec.md", "tasks.md"],
@@ -61,12 +61,12 @@
     "ticketRequiredForChange": true
   },
   "gates": [
-    "spec: requisitos EARS verificables",
-    "plan: cubre todos los REQ-*",
-    "tasks: tareas atómicas con rutas exactas",
-    "implementation: pruebas en verde",
-    "analyze: sin drift bloqueante",
-    "sync: sanity check sin errores"
+    "spec: verifiable EARS requirements",
+    "plan: covers all REQ-*",
+    "tasks: atomic tasks with exact paths",
+    "implementation: tests green",
+    "analyze: no blocking drift",
+    "sync: sanity check with no errors"
   ],
   "agentBehavior": {
     "readConstitutionFirst": true,

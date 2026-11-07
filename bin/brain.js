@@ -4,29 +4,31 @@ const fs = require('node:fs')
 const path = require('node:path')
 const { spawnSync } = require('node:child_process')
 const { buildNodeCommand } = require('../scripts/lib/shell')
+const { t } = require('../scripts/lib/i18n')
 
 const ROOT_DIR = path.resolve(__dirname, '..')
 const PACKAGE_PATH = path.join(ROOT_DIR, 'package.json')
 
 const COMMANDS = {
-  init: { script: 'scripts/init-brain.js', description: 'Onboarding, sesión y lanzamiento del agente.' },
-  start: { script: 'scripts/init-brain.js', description: 'Alias de init.' },
-  setup: { script: 'scripts/setup-wizard.js', description: 'Registrar sidecars y topología del ecosistema.' },
-  'agents:sync': { script: 'scripts/sync-agents.js', description: 'Re-desplegar assets y comandos del motor de agente.' },
-  'init-work': { script: 'scripts/sdd.js', prepend: ['init-work'], description: 'Inicializar una feature SDD en .brain/.' },
-  specify: { script: 'scripts/sdd.js', prepend: ['specify'], description: 'Generar spec.md (EARS).' },
-  plan: { script: 'scripts/sdd.js', prepend: ['plan'], description: 'Generar plan.md.' },
-  tasks: { script: 'scripts/sdd.js', prepend: ['tasks'], description: 'Generar tasks.md.' },
-  implement: { script: 'scripts/sdd.js', prepend: ['implement'], description: 'Ejecutar tareas (checkpoint o batch).' },
-  analyze: { script: 'scripts/sdd.js', prepend: ['analyze'], description: 'Auditar coherencia y spec drift.' },
-  sync: { script: 'scripts/sync-github.js', description: 'Publicar tickets del backlog como issues.' },
-  'sync:pull': { script: 'scripts/sync-pull.js', description: 'Importar issues de GitHub como tickets.' },
-  pull: { script: 'scripts/sync-pull.js', description: 'Alias de sync:pull.' },
-  sanity: { script: 'scripts/sanity-check.js', description: 'Auditar coherencia de tickets.' },
-  watch: { script: 'scripts/watch-github.js', description: 'Sincronización continua.' },
-  normalize: { script: 'scripts/normalize-ticket.js', description: 'Normalizar tickets importados.' },
-  complete: { script: 'scripts/complete-ticket.js', description: 'Cerrar la entrega de un ticket.' },
-  hotfix: { script: 'scripts/hotfix.js', description: 'Crear un ticket de emergencia.' }
+  init: { script: 'scripts/init-brain.js', descriptionKey: 'bin.cmd.init' },
+  start: { script: 'scripts/init-brain.js', descriptionKey: 'bin.cmd.start' },
+  setup: { script: 'scripts/setup-wizard.js', descriptionKey: 'bin.cmd.setup' },
+  'agents:sync': { script: 'scripts/sync-agents.js', descriptionKey: 'bin.cmd.agentsSync' },
+  audit: { script: 'scripts/audit.js', descriptionKey: 'bin.cmd.audit' },
+  'init-work': { script: 'scripts/sdd.js', prepend: ['init-work'], descriptionKey: 'bin.cmd.initWork' },
+  specify: { script: 'scripts/sdd.js', prepend: ['specify'], descriptionKey: 'bin.cmd.specify' },
+  plan: { script: 'scripts/sdd.js', prepend: ['plan'], descriptionKey: 'bin.cmd.plan' },
+  tasks: { script: 'scripts/sdd.js', prepend: ['tasks'], descriptionKey: 'bin.cmd.tasks' },
+  implement: { script: 'scripts/sdd.js', prepend: ['implement'], descriptionKey: 'bin.cmd.implement' },
+  analyze: { script: 'scripts/sdd.js', prepend: ['analyze'], descriptionKey: 'bin.cmd.analyze' },
+  sync: { script: 'scripts/sync-github.js', descriptionKey: 'bin.cmd.sync' },
+  'sync:pull': { script: 'scripts/sync-pull.js', descriptionKey: 'bin.cmd.syncPull' },
+  pull: { script: 'scripts/sync-pull.js', descriptionKey: 'bin.cmd.pull' },
+  sanity: { script: 'scripts/sanity-check.js', descriptionKey: 'bin.cmd.sanity' },
+  watch: { script: 'scripts/watch-github.js', descriptionKey: 'bin.cmd.watch' },
+  normalize: { script: 'scripts/normalize-ticket.js', descriptionKey: 'bin.cmd.normalize' },
+  complete: { script: 'scripts/complete-ticket.js', descriptionKey: 'bin.cmd.complete' },
+  hotfix: { script: 'scripts/hotfix.js', descriptionKey: 'bin.cmd.hotfix' }
 }
 
 function readVersion() {
@@ -38,23 +40,14 @@ function readVersion() {
 }
 
 function printHelp() {
-  console.log(`brain-corp v${readVersion()}
-
-Uso:
-  brain [comando] [opciones]
-
-Comandos:`)
+  console.log(t('bin.title', { version: readVersion() }))
+  console.log(`\n${t('bin.usage')}`)
 
   for (const [name, command] of Object.entries(COMMANDS)) {
-    console.log(`  ${name.padEnd(12)} ${command.description}`)
+    console.log(`  ${name.padEnd(12)} ${t(command.descriptionKey)}`)
   }
 
-  console.log(`
-Opciones:
-  -h, --help       Muestra esta ayuda.
-  -v, --version    Muestra la versión.
-
-Sin comando, brain ejecuta "init".`)
+  console.log(`\n${t('bin.options')}`)
 }
 
 function fail(message) {
@@ -111,7 +104,7 @@ function main() {
   const command = COMMANDS[first]
 
   if (!command) {
-    console.error(`[brain] Comando no reconocido: ${first}`)
+    console.error(`[brain] ${t('bin.unknown', { name: first })}`)
     printHelp()
     return 1
   }

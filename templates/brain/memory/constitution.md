@@ -1,83 +1,83 @@
-# Constitución de brain-corp
+# brain-corp Constitution
 
-> Memoria central del motor SDD. Es la regla inquebrantable del ecosistema y prevalece sobre cualquier instrucción local que la contradiga. Vive en `<workspace>/.brain/memory/constitution.md` y aplica a todos los repositorios orquestados sin duplicarse en cada sidecar.
+> Central memory of the SDD engine. It is the unbreakable rule of the ecosystem and prevails over any local instruction that contradicts it. It lives at `<workspace>/.brain/memory/constitution.md` and applies to all orchestrated repositories without being duplicated per sidecar.
 
-## 1. Principios rectores
+## 1. Guiding principles
 
-1. **Una raíz, nunca `cd`.** Todo opera desde la raíz del workspace. Las rutas de los repositorios se resuelven desde `config/system-map.json` y se pasan como `workdir`/`cwd` a las herramientas.
-2. **La raíz orquesta; los sidecars implementan.** La raíz no contiene lógica de negocio ni código de producto. Cada repositorio conserva su propia constitución, reglas y quality gates.
-3. **Analizar, no improvisar.** Toda decisión se basa en evidencia verificable: archivos, contratos, esquemas y pruebas reales. Si no puede verificarse, se declara como supuesto.
-4. **SDD local y trazable.** Cada repositorio conserva su especificación y estado en `.brain/`. Nada de specs globales duplicadas.
-5. **GitHub Issues es el canal de sincronización.** Los tickets en Markdown son la representación local.
-6. **Cero secretos locales.** La autenticación con GitHub se delega a `gh`; nunca se persisten tokens ni credenciales.
-7. **Sanity-check es pre-flight.** No se publica ni sincroniza nada si el sanity check detecta errores bloqueantes.
-8. **Trazabilidad total.** No hay cambio sin `TICK-XXX`, ni PR sin `Closes #...`, ni cierre sin `/complete` o `sync:pull`.
+1. **One root, never `cd`.** Everything runs from the workspace root. Repository paths are resolved from `config/system-map.json` and passed as `workdir`/`cwd` to tools.
+2. **The root orchestrates; sidecars implement.** The root contains no business logic or product code. Each repository keeps its own constitution, rules and quality gates.
+3. **Analyze, do not guess.** Every decision is based on verifiable evidence: real files, contracts, schemas and tests. If it cannot be verified, declare it as an assumption.
+4. **Local, traceable SDD.** Each repository keeps its specification and state in `.brain/`. No duplicated global specs.
+5. **GitHub Issues is the synchronization channel.** Markdown tickets are the local representation.
+6. **Zero local secrets.** GitHub authentication is delegated to `gh`; tokens and credentials are never persisted.
+7. **Sanity-check is pre-flight.** Nothing is published or synchronized if the sanity check detects blocking errors.
+8. **Full traceability.** No change without `TICK-XXX`, no PR without `Closes #...`, no closure without `/complete` or `sync:pull`.
 
-## 2. Flujo canónico
+## 2. Canonical flow
 
 ```text
-TICK-XXX → /init-work → /specify → /plan → /tasks → /implement (Checkpoint | Batch) → /analyze → PR (plantilla) → /complete → done/
+TICK-XXX → /init-work → /specify → /plan → /tasks → /implement (Checkpoint | Batch) → /analyze → PR (template) → /complete → done/
 ```
 
-- `/init-work TICK-XXX [--repo <id>]` crea `.brain/features/<TICK-XXX>/` y fija `.brain/active.json`.
-- `/specify` produce `spec.md` en formato EARS.
-- `/plan` produce `plan.md` con la estrategia técnica.
-- `/tasks` produce `tasks.md` con tareas atómicas y referencias `REQ-*`.
-- `/implement` ejecuta en modo **Checkpoint** (una tarea con confirmación) o **Batch** (bloque autónomo).
-- `/analyze` audita coherencia y detecta spec drift entre spec, tareas y código.
-- `/complete` cierra la entrega y mueve el ticket a `done/`.
+- `/init-work TICK-XXX [--repo <id>]` creates `.brain/features/<TICK-XXX>/` and sets `.brain/active.json`.
+- `/specify` produces `spec.md` in EARS format.
+- `/plan` produces `plan.md` with the technical strategy.
+- `/tasks` produces `tasks.md` with atomic tasks and `REQ-*` references.
+- `/implement` runs in **Checkpoint** (one task with confirmation) or **Batch** (autonomous block) mode.
+- `/analyze` audits coherence and detects spec drift between spec, tasks and code.
+- `/complete` closes the delivery and moves the ticket to `done/`.
 
-El antiguo flujo `speckit.*` está prohibido. No se permiten scripts bash externos ni carpetas de especificación fuera de `.brain/`.
+The old `speckit.*` flow is forbidden. External bash scripts and specification folders outside `.brain/` are not allowed.
 
-## 3. Reglas del motor `.brain/`
+## 3. `.brain/` engine rules
 
 ```text
 .brain/
-├── active.json              ← puntero de sesión (ticket y fase)
-├── templates/               ← plantillas EARS
-├── memory/                  ← esta constitución
+├── active.json              ← session pointer (ticket and phase)
+├── templates/               ← EARS templates
+├── memory/                  ← this constitution
 └── features/<TICK-XXX>/
     ├── spec.md
     ├── plan.md
     ├── tasks.md
-    ├── contract.md          ← solo si cruza sidecars
-    └── analysis.md          ← reporte de análisis
+    ├── contract.md          ← only if it crosses sidecars
+    └── analysis.md          ← analysis report
 ```
 
-1. `contract.md` se genera únicamente si el ticket es `shared` o si el repositorio tiene `relationships` en `system-map.json`.
-2. Toda spec debe incluir `Source Ticket: .agents/tickets/<estado>/TICK-XXX-<slug>.md`.
-3. No se avanza de fase sin el archivo de la fase anterior (`specify → plan → tasks → implement`).
-4. Las tareas se marcan `[x]` solo cuando están implementadas y verificadas.
-5. `/analyze` es obligatorio antes de abrir el PR de una feature.
+1. `contract.md` is generated only if the ticket is `shared` or the repository has `relationships` in `system-map.json`.
+2. Every spec must include `Source Ticket: .agents/tickets/<state>/TICK-XXX-<slug>.md`.
+3. No phase advances without the previous phase file (`specify → plan → tasks → implement`).
+4. Tasks are marked `[x]` only when implemented and verified.
+5. `/analyze` is mandatory before opening a feature PR.
 
-## 4. Restricciones de código
+## 4. Code constraints
 
-1. No se implementa código de producto desde la raíz del workspace.
-2. Todo cambio en un repositorio respeta su stack, su esquema y sus pruebas locales.
-3. Conventional Commits: `feat(<módulo>): ...`, `fix(<módulo>): ...`, `docs(spec): ...`, `refactor(<módulo>): ...`.
-4. El agente **nunca** ejecuta `git commit`, `git push`, `git merge` ni abre PR sin autorización explícita.
-5. No se introducen dependencias nuevas sin justificar la alternativa descartada en `plan.md`.
-6. Todo cambio de contrato entre repositorios exige `contract.md`, versión compatible y pruebas de integración.
+1. Product code is never implemented from the workspace root.
+2. Every repository change respects its stack, schema and local tests.
+3. Conventional Commits: `feat(<module>): ...`, `fix(<module>): ...`, `docs(spec): ...`, `refactor(<module>): ...`.
+4. The agent **never** runs `git commit`, `git push`, `git merge` or opens a PR without explicit authorization.
+5. No new dependencies without justifying the rejected alternative in `plan.md`.
+6. Every cross-repository contract change requires `contract.md`, a compatible version and integration tests.
 
-## 5. Comportamiento estricto del agente
+## 5. Strict agent behavior
 
-1. Lee esta constitución antes de actuar. Si entra en conflicto con un ticket o una instrucción, prevalece la constitución.
-2. Resuelve el repositorio destino desde `config/system-map.json`; no asumas rutas fijas.
-3. No inventes requisitos, archivos ni APIs. Verifica o declara el supuesto.
-4. Ante ambigüedad, detente y formula una sola pregunta de clarificación.
-5. Si detecta spec drift o alcance no cubierto, detiene la implementación y ejecuta `/analyze` o `/cross-analyze`.
-6. No elimina tickets con `github_issue` sin autorización explícita.
-7. No expone secretos en logs, commits ni archivos.
+1. Read this constitution before acting. If it conflicts with a ticket or instruction, the constitution prevails.
+2. Resolve the target repository from `config/system-map.json`; never assume fixed paths.
+3. Do not invent requirements, files or APIs. Verify or declare the assumption.
+4. On ambiguity, stop and ask a single clarifying question.
+5. If spec drift or uncovered scope is detected, stop implementation and run `/analyze` or `/cross-analyze`.
+6. Do not delete tickets with `github_issue` without explicit authorization.
+7. Do not expose secrets in logs, commits or files.
 
-## 6. Gates de calidad
+## 6. Quality gates
 
-- **Spec gate:** requisitos EARS con criterios de aceptación verificables.
-- **Plan gate:** estrategia técnica que cubre cada `REQ-*` y contrapone alternativas.
-- **Tasks gate:** tareas atómicas, paralelizables cuando aplique, con rutas exactas.
-- **Implementation gate:** pruebas del repositorio en verde y tareas verificadas.
-- **Analyze gate:** sin errores de drift ni requisitos sin cobertura.
-- **Sync gate:** sanity check sin errores bloqueantes.
+- **Spec gate:** EARS requirements with verifiable acceptance criteria.
+- **Plan gate:** technical strategy covering every `REQ-*` and contrasting alternatives.
+- **Tasks gate:** atomic tasks, parallelizable when applicable, with exact paths.
+- **Implementation gate:** repository tests green and tasks verified.
+- **Analyze gate:** no drift errors or uncovered requirements.
+- **Sync gate:** sanity check with no blocking errors.
 
-## 7. Enmiendas
+## 7. Amendments
 
-Toda enmienda a esta constitución se registra con fecha, ticket, motivo, regla anterior y regla nueva. Una enmienda sin ticket es inválida.
+Every amendment to this constitution is recorded with date, ticket, reason, previous rule and new rule. An amendment without a ticket is invalid.
