@@ -12,6 +12,7 @@ const COMMANDS = {
   init: { script: 'scripts/init-brain.js', description: 'Onboarding, sesión y lanzamiento del agente.' },
   start: { script: 'scripts/init-brain.js', description: 'Alias de init.' },
   setup: { script: 'scripts/setup-wizard.js', description: 'Registrar sidecars y enrutamiento de spec-kit.' },
+  'agents:sync': { script: 'scripts/sync-agents.js', description: 'Re-desplegar assets y comandos del motor de agente.' },
   sync: { script: 'scripts/sync-github.js', description: 'Publicar tickets del backlog como issues.' },
   'sync:pull': { script: 'scripts/sync-pull.js', description: 'Importar issues de GitHub como tickets.' },
   pull: { script: 'scripts/sync-pull.js', description: 'Alias de sync:pull.' },

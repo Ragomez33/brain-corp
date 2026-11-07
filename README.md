@@ -100,6 +100,7 @@ Si un ticket es `shared`, se genera una spec por cada sidecar afectado (*fan-out
 npm install
 npm run setup         # detectar repos con gh, asignar roles y generar sidecars/<repo>
 npm run init-brain    # onboarding + sesión + watcher opcional + lanza el agente
+npm run agents:sync   # re-desplegar prompts, skills y comandos del motor de agente
 npm run sync:pull     # importar issues a tickets
 npm run sync          # publicar tickets como issues
 npm run watch         # sincronización continua
@@ -115,6 +116,7 @@ El CLI opera siempre sobre el **directorio actual** (`process.cwd()`): lee `conf
 brain setup           # descubre repos con gh api, multi-select y asignación de roles
 brain setup --manual  # omite GitHub y registra por URL o ruta local
 brain init            # onboarding + sesión + lanzamiento del agente
+brain agents:sync     # re-desplegar assets del motor (--agent, --overwrite)
 brain sync:pull       # importar issues
 brain sync            # publicar tickets
 brain sanity          # auditar tickets
