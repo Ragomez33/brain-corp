@@ -21,6 +21,7 @@
     "brain": "node bin/brain.js",
     "setup": "node scripts/setup-wizard.js",
     "init-brain": "node scripts/init-brain.js",
+    "agents:sync": "node scripts/sync-agents.js",
     "sync": "node scripts/sync-github.js",
     "sanity": "node scripts/sanity-check.js",
     "sync:pull": "node scripts/sync-pull.js",
