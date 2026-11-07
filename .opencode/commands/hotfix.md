@@ -30,7 +30,7 @@ Si falta un dato obligatorio, pregunta antes de ejecutar. Si `--spec-impact` no 
 
 ## Paso 2 — Validar impacto antes de codificar
 
-1. Si el hotfix altera comportamiento, contrato o interfaz ya gobernado por una spec, actualiza la spec/contrato y registra la enmienda en el Change Log de `tasks.md` del sidecar. No requiere el flujo completo de spec-kit, pero sí la enmienda.
+1. Si el hotfix altera comportamiento, contrato o interfaz ya gobernado por una spec, actualiza la spec/contrato y registra la enmienda en el Change Log de `tasks.md` del sidecar. No requiere el flujo SDD completo, pero sí la enmienda.
 2. Si no existe spec para el área, usa `--spec-impact none` o `--spec-impact "Spec pendiente: <motivo>"` y asegúrate de abrir el seguimiento correspondiente.
 3. Revisa `git fetch origin` y el estado contra la rama base del sidecar antes de crear la rama (`--fetch` y `--base` ayudan).
 

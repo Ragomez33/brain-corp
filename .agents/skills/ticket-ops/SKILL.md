@@ -5,7 +5,7 @@ description: Crea, valida, normaliza y sincroniza tickets de brain-corp.
 
 # Operaciones de tickets
 
-- Crear: `/analyze <tema>` o `node scripts/hotfix.js`.
+- Crear: `/cross-analyze <tema>` o `node scripts/hotfix.js`.
 - Validar: `node scripts/sanity-check.js --write --json`.
 - Publicar: `node scripts/sync-github.js`.
 - Importar: `node scripts/sync-pull.js`.

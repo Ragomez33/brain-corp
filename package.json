@@ -1,6 +1,6 @@
 {
   "name": "@rgkoko/brain-corp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI de orquestación de ecosistemas multi-repositorio: topología de sidecars, tickets y sincronización con GitHub Issues.",
   "license": "MIT",
   "author": "Ragomez33",
@@ -19,7 +19,8 @@
     "monorepo",
     "tickets",
     "github-issues",
-    "spec-kit",
+    "spec-driven-development",
+    "ears",
     "agents"
   ],
   "engines": {
@@ -34,7 +35,7 @@
     "config",
     ".agents",
     ".opencode",
-    ".specify",
+    "templates",
     "LICENSE",
     "README.md",
     "constitution.md"
@@ -44,6 +45,13 @@
     "setup": "node scripts/setup-wizard.js",
     "init-brain": "node scripts/init-brain.js",
     "agents:sync": "node scripts/sync-agents.js",
+    "sdd": "node scripts/sdd.js",
+    "init-work": "node scripts/sdd.js init-work",
+    "specify": "node scripts/sdd.js specify",
+    "plan": "node scripts/sdd.js plan",
+    "tasks": "node scripts/sdd.js tasks",
+    "implement": "node scripts/sdd.js implement",
+    "analyze": "node scripts/sdd.js analyze",
     "sync": "node scripts/sync-github.js",
     "sanity": "node scripts/sanity-check.js",
     "sync:pull": "node scripts/sync-pull.js",

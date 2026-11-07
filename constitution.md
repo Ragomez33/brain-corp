@@ -18,7 +18,8 @@
 
 ## Artículo 2 — Separación estricta entre orquestación y producto
 
-1. La raíz de brain-corp contiene únicamente: `.agents/`, `.opencode/`, `config/`, `scripts/`, `.specify/`, documentación de orquestación y archivos de gobernanza.
+0. La constitución central del ecosistema vive en `<workspace>/.brain/memory/constitution.md` y aplica a todos los repositorios sin duplicarse por sidecar. El CLI (`brain init` / `brain setup`) la despliega si no existe y nunca sobrescribe una ya personalizada.
+1. La raíz de brain-corp contiene únicamente: `.agents/`, `.opencode/`, `config/`, `scripts/`, `templates/brain/`, documentación de orquestación y archivos de gobernanza.
 2. La raíz **no contiene lógica de negocio, componentes, esquemas de datos ni código de producto**. Esos artefactos pertenecen a los sidecars registrados en `config/system-map.json` y se modifican dentro de su repositorio/submódulo.
 3. Los sidecars no deben depender de scripts o metadatos de la raíz para funcionar en producción. La raíz orquesta; los sidecars ejecutan.
 4. Las rutas de los sidecars se resuelven siempre desde `config/system-map.json`; nunca se codifican rutas absolutas de la máquina en scripts o tickets.
@@ -35,7 +36,7 @@
 ## Artículo 4 — Trazabilidad obligatoria por tickets
 
 1. Todo cambio de producto, contrato, esquema, configuración o entrega debe estar asociado a un ticket `TICK-XXX` en `.agents/tickets/`.
-2. La spec generada por spec-kit debe incluir `Source Ticket: .agents/tickets/<estado>/TICK-XXX-<slug>.md`.
+2. La spec generada por el motor SDD (`<repo>/.brain/features/<TICK-XXX>/spec.md`) debe incluir `Source Ticket: .agents/tickets/<estado>/TICK-XXX-<slug>.md`.
 3. Todo PR debe declarar `Closes #<issue>` o el issue asociado, y el ticket local debe reflejar el estado real (`backlog`, `in-analysis`, `ready`, `done`).
 4. Al completar una entrega se usa `/complete TICK-XXX <PR>` o el flujo equivalente: `status: "done"`, referencia del PR en `## Entrega`, movimiento a `.agents/tickets/done/` y cierre del issue.
 5. Un issue cerrado en GitHub debe reflejarse como `done` y mover el ticket a `done/` en el siguiente `sync:pull`; un issue reabierto devuelve el ticket a `backlog/`.
@@ -44,15 +45,15 @@
 
 ## Artículo 5 — SDD y spec-first en los sidecars
 
-1. El flujo canónico es: ticket → sanity check → sync → `/speckit.specify` → `/speckit.clarify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.implement` → PR → `/complete`.
+1. El flujo canónico es: ticket → sanity check → sync → `/init-work TICK-XXX` → `/specify` → `/plan` → `/tasks` → `/implement (Checkpoint | Batch)` → `/analyze` → PR → `/complete`.
 2. Ningún cambio que altere comportamiento, contrato o interfaz ya gobernado por una spec puede implementarse sin actualizar antes la spec correspondiente, incluso si llega como bugfix.
 3. Las enmiendas de spec se registran en el Change Log de `tasks.md` del módulo afectado con fecha, ticket, rama, archivos, motivo, comportamiento anterior/nuevo y pruebas.
-4. Los hotfix pueden omitir la fase pesada de spec-kit, pero **no** pueden omitir: ticket de emergencia, validación de impacto en especificaciones y declaración explícita del impacto en el PR.
+4. Los hotfix pueden omitir la fase pesada del SDD, pero **no** pueden omitir: ticket de emergencia, validación de impacto en especificaciones y declaración explícita del impacto en el PR.
 5. Si no existe spec para el área del hotfix, el PR declara `Spec impact: none` o `Spec pendiente` y se abre el ticket de seguimiento para documentarla.
 
 ## Artículo 6 — Git, ramas y Pull Requests
 
-1. Ramas de features generadas por spec-kit: `<feature-number>-<slug>` (por ejemplo `015-inventory-data-contract`).
+1. Ramas de features generadas por el SDD: `TICK-XXX-<slug>` (por ejemplo `TICK-014-inventory-data-contract`).
 2. Ramas de corrección y hotfix: `fix/TICK-XXX-<slug>`; si no hay ticket, `fix/<slug>` solo en el sidecar que lo permita. No se introduce `hotfix/` salvo que se enmiende la constitución del sidecar.
 3. Antes de crear una rama se verifica el estado contra la rama base (`git fetch origin`, `git log`/`git diff` contra `origin/main` o la base acordada), según la constitución del sidecar.
 4. Los commits siguen Conventional Commits: `feat(<módulo>): ...`, `fix(<módulo>): ...`, `docs(spec): ...`, `refactor(<módulo>): ...`.
@@ -81,8 +82,8 @@
 ## Flujo canónico
 
 ```
-TICK-XXX → /sanity-check → npm run sync → /speckit.specify → /speckit.plan
-→ /speckit.tasks → /speckit.implement → PR (plantilla) → /complete → done/
+TICK-XXX → /sanity-check → npm run sync → /init-work TICK-XXX → /specify → /plan
+→ /tasks → /implement (Checkpoint | Batch) → /analyze → PR (plantilla) → /complete → done/
 ```
 
 ## Flujo de emergencia

@@ -21,8 +21,6 @@ const {
   writeSystemMap
 } = require('./lib/system-map')
 
-const SPECIFY_CONFIG_PATH = path.join('.specify', 'config.json')
-
 const ROLE_LABELS = {
   provider: 'provider (provee datos/API a otros sidecars)',
   client: 'client (consume datos/API de un provider)',
@@ -495,72 +493,6 @@ function buildUpdatedMap(current, repositories) {
   }
 }
 
-function buildSpecifyProject(repository, existingProject) {
-  if (existingProject) {
-    return {
-      ...existingProject,
-      systemMapRepository: repository.id,
-      path: repository.path,
-      specifyInitDir: existingProject.specifyInitDir || repository.path
-    }
-  }
-
-  const specs =
-    repository.specs && typeof repository.specs === 'object'
-      ? repository.specs
-      : {
-          directory: `${repository.path}/specs`,
-          layout: 'feature-folder',
-          file: 'spec.md',
-          naming: '<feature-number>-<slug>',
-          template: null,
-          constitution: `${repository.path}/constitution.md`,
-          specKitScript: null
-        }
-
-  return {
-    systemMapRepository: repository.id,
-    path: repository.path,
-    specifyInitDir: repository.path,
-    specs
-  }
-}
-
-function syncSpecifyConfig(rootDir, repositories) {
-  const filePath = path.join(rootDir, SPECIFY_CONFIG_PATH)
-  if (!fs.existsSync(filePath)) return null
-
-  let config
-
-  try {
-    config = JSON.parse(fs.readFileSync(filePath, 'utf8'))
-  } catch (error) {
-    console.warn(`[setup-wizard] No se pudo leer .specify/config.json: ${error.message}`)
-    return null
-  }
-
-  const currentProjects =
-    config.projects && typeof config.projects === 'object' ? config.projects : {}
-  const projects = {}
-
-  for (const repository of repositories) {
-    const existingProject =
-      currentProjects[repository.id] ||
-      Object.values(currentProjects).find(
-        project =>
-          project &&
-          (project.systemMapRepository === repository.id || project.path === repository.path)
-      )
-
-    projects[repository.id] = buildSpecifyProject(repository, existingProject)
-  }
-
-  config.projects = projects
-  fs.writeFileSync(filePath, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
-
-  return filePath
-}
-
 function printSummary(repositories) {
   if (repositories.length === 0) {
     console.log('\nNo hay sidecars registrados en config/system-map.json.')
@@ -600,7 +532,7 @@ async function runSetupWizard({
 
   if (createdAssets > 0) {
     console.log(
-      `[setup-wizard] Assets base desplegados: ${createdAssets} archivo(s) nuevos en .agents/ y .specify/.`
+      `[setup-wizard] Assets base desplegados: ${createdAssets} archivo(s) nuevos en .agents/, .brain/templates/ y comandos.`
     )
   }
 
@@ -649,10 +581,6 @@ async function runSetupWizard({
   const next = buildUpdatedMap(current, repositories)
   writeSystemMap(rootDir, next)
 
-  if (syncSpecifyConfig(rootDir, repositories)) {
-    console.log('\nEnrutamiento de spec-kit actualizado en .specify/config.json.')
-  }
-
   printSummary(repositories)
   console.log('\nSiguiente paso: "brain init" o "npm run init-brain".')
 
@@ -687,6 +615,5 @@ module.exports = {
   needsSidecarOnboarding,
   parseSelection,
   promptSelection,
-  runSetupWizard,
-  syncSpecifyConfig
+  runSetupWizard
 }

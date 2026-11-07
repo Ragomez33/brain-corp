@@ -9,7 +9,7 @@ CLI de orquestación para ecosistemas multi-repositorio: mantiene juntos varios 
 
 Los ecosistemas multi-repositorio suelen parecer correctos repo por repo, pero fallan en las costuras: contratos desalineados, funcionalidades sin endpoint, endpoints sin consumidor o modelos de datos que no coinciden.
 
-**brain-corp es la capa de coordinación.** No implementa producto: registra la topología, detecta vacíos de integración, los convierte en tickets accionables, los sincroniza con GitHub y los encamina hacia una especificación (spec-kit) en el repositorio correcto.
+**brain-corp es la capa de coordinación.** No implementa producto: registra la topología, detecta vacíos de integración, los convierte en tickets accionables, los sincroniza con GitHub y los encamina hacia una especificación SDD (`.brain/`) en el repositorio correcto.
 
 ## Topología
 
@@ -17,7 +17,7 @@ Los ecosistemas multi-repositorio suelen parecer correctos repo por repo, pero f
 brain-corp/                     ← raíz de orquestación (este repo)
 ├── config/system-map.json      ← topología activa (se genera con brain setup)
 ├── config/system-map.example.json
-├── .specify/config.json        ← enrutamiento del spec-kit nativo por sidecar
+├── templates/brain/            ← plantillas EARS + memoria (constitución central)
 ├── .agents/
 │   ├── prompts/analyst.md      ← rol del Arquitecto Analista
 │   └── tickets/                ← estados de tickets (se crean bajo demanda)
@@ -49,8 +49,8 @@ Las confirmaciones del wizard y de `brain init` usan un selector de flechas `Sí
 Al elegir el agente, `brain init` aprovisiona automáticamente el workspace:
 
 - `.agents/prompts/` y `.agents/skills/` con el rol del analista y las skills base.
-- `.specify/` con scripts, plantillas, workflows y enrutamiento hacia los sidecars.
-- `.opencode/commands/` para OpenCode (`/analyze`, `/sanity`, `/sync`, `/speckit.*`).
+- `.brain/templates/` con las plantillas EARS del motor SDD.
+- `.opencode/commands/` para OpenCode (`/cross-analyze`, `/init-work`, `/specify`, `/plan`, `/tasks`, `/implement`, `/analyze`, `/sanity`, `/sync`).
 - Estructuras equivalentes para Claude Code (`.claude/commands/`), Cursor (`.cursor/rules/`) o Antigravity (`.antigravity/rules/`).
 - `AGENTS.md` como punto de entrada genérico para otros agentes.
 
@@ -80,15 +80,32 @@ El comando `/sanity-check` audita el backlog antes del sync: contrasta tickets d
 
 El comando `/complete` cierra un ticket tras la entrega: actualiza el frontmatter, registra la referencia del PR, lo mueve a `done/` y cierra su issue en GitHub.
 
-### 4. Ticket → especificación
+### 4. Ticket → especificación (SDD nativo en `.brain/`)
 
-No hay una skill o script propio que duplique spec-kit. brain-corp usa **el flujo nativo de spec-kit** en cada sidecar, enrutado por `target_domain` desde `.specify/config.json`:
+Cada repositorio conserva sus especificaciones y su estado de ejecución en `.brain/`:
+
+```text
+<repo>/.brain/
+├── active.json              ← ticket activo y fase actual
+├── templates/               ← plantillas EARS
+└── features/<TICK-XXX>/
+    ├── spec.md              ← requisitos EARS
+    ├── plan.md              ← estrategia técnica
+    ├── tasks.md             ← tareas atómicas
+    ├── contract.md          ← solo si cruza sidecars
+    └── analysis.md          ← reporte de spec drift
+```
+
+Flujo:
 
 ```
-/speckit.specify → /speckit.clarify → /speckit.plan → /speckit.tasks → /speckit.implement
+/init-work TICK-XXX → /specify → /plan → /tasks → /implement (Checkpoint | Batch) → /analyze
 ```
 
-Si un ticket es `shared`, se genera una spec por cada sidecar afectado (*fan-out*), manteniendo el `Source Ticket` dentro de la spec para trazabilidad.
+- `/init-work` crea la feature y fija `.brain/active.json`; genera `contract.md` solo si el ticket es `shared` o cruza `relationships` del mapa.
+- `/implement` soporta modo **checkpoint** (una tarea y confirmación) o **batch** (bloque completo autónomo).
+- `/analyze` audita coherencia y detecta desvío entre spec, tareas y código. El antiguo `/analyze` generador de tickets pasa a llamarse `/cross-analyze`.
+- Si un ticket es `shared`, elige el repositorio base con `--repo <id>`; la spec y el contrato viven allí y el orquestador resuelve las dependencias desde `system-map.json`, sin duplicar specs globalmente.
 
 ## Requisitos
 
@@ -107,6 +124,12 @@ npm run agents:sync   # re-desplegar prompts, skills y comandos del motor de age
 npm run sync:pull     # importar issues a tickets
 npm run sync          # publicar tickets como issues
 npm run watch         # sincronización continua
+npm run init-work -- TICK-XXX   # iniciar feature SDD en .brain/
+npm run specify -- TICK-XXX     # generar spec.md (EARS)
+npm run plan -- TICK-XXX        # generar plan.md
+npm run tasks -- TICK-XXX       # generar tasks.md
+npm run implement -- TICK-XXX   # ejecutar tareas (checkpoint o batch)
+npm run analyze -- TICK-XXX     # auditar spec drift
 ```
 
 ### CLI global
@@ -120,6 +143,12 @@ brain setup           # descubre repos con gh api, multi-select y asignación de
 brain setup --manual  # omite GitHub y registra por URL o ruta local
 brain init            # onboarding + sesión + lanzamiento del agente
 brain agents:sync     # re-desplegar assets del motor (--agent, --overwrite)
+brain init-work TICK-XXX  # crear feature en .brain/features/<ticket>/
+brain specify TICK-XXX    # generar spec.md EARS
+brain plan TICK-XXX       # generar plan.md
+brain tasks TICK-XXX      # generar tasks.md
+brain implement TICK-XXX  # ejecutar tareas (--mode checkpoint|batch, --complete TXXX)
+brain analyze TICK-XXX    # detectar spec drift
 brain sync:pull       # importar issues
 brain sync            # publicar tickets
 brain sanity          # auditar tickets
@@ -133,9 +162,11 @@ En un workspace limpio, el wizard **no incluye ningún proyecto por defecto**: l
 - **`.brainrc.json`** — estado local: usuario, Project de GitHub, agente por defecto y última sesión. Está en `.gitignore`.
 - **`config/system-map.json`** — topología activa: rutas, roles (`provider`/`client`/`standalone`), stacks, dominios, endpoints, esquemas y relaciones entre sidecars. El template base es neutro (sin sidecars); se puebla con `brain setup`. Es la fuente de verdad estructural.
 - **`config/system-map.example.json`** — mapa poblado de referencia con sidecars provider/client/standalone. Cópialo sobre `system-map.json` si quieres partir de una topología de ejemplo.
-- **`.specify/config.json`** — cómo se enruta cada ticket al proyecto y directorio de specs correcto. El wizard y `brain init` sincronizan sus `projects` con los sidecars registrados.
+- **`.brain/`** — en cada repositorio: `active.json`, `templates/` y `features/<TICK-XXX>/` (`spec.md`, `plan.md`, `tasks.md`, `contract.md`, `analysis.md`). Es la fuente de verdad del SDD.
+- **`templates/brain/`** — plantillas EARS que el motor copia a `<repo>/.brain/templates/` en `init-work`.
+- **`.brain/memory/constitution.md`** — constitución centralizada del ecosistema. `brain init` y `brain setup` la despliegan en el workspace si no existe (nunca sobrescriben una personalizada). `constitution-template.json` expone las mismas reglas en formato máquina.
 - **`.agents/prompts/`** — comportamiento del analista (rol, protocolo, formato de tickets).
-- **`.agents/skills/`** — skills base aprovisionadas (`brain-corp`, `spec-kit`, `ticket-ops`).
+- **`.agents/skills/`** — skills base aprovisionadas (`brain-corp`, `sdd-brain`, `ticket-ops`).
 - **`.opencode/commands/`** — comandos slash de OpenCode aprovisionados para el workspace.
 
 ## Principios
@@ -143,7 +174,7 @@ En un workspace limpio, el wizard **no incluye ningún proyecto por defecto**: l
 1. **Una raíz, nunca `cd`.** Todo opera desde brain-corp; las rutas de los sidecars se resuelven desde `config/system-map.json`.
 2. **Analizar, no implementar.** brain-corp produce diagnóstico y tickets, no cambios en los sidecars.
 3. **Evidencia sobre suposiciones.** Que exista un resolver no implica que haya contrato expuesto; que exista una vista no implica que tenga backend.
-4. **Spec-kit es nativo.** La orquestación enruta, no reimplementa el flujo de especificación.
+4. **SDD es nativo y local.** Cada repositorio conserva su spec y estado en `.brain/`; la orquestación los resuelve desde `system-map.json`.
 5. **GitHub Issues es el canal de sincronización**; los tickets en Markdown son la representación local.
 6. **Cero tokens locales.** La autenticación GitHub se delega a `gh`; no se persisten PATs ni secretos en el repo.
 7. **Sanity-check es pre-flight.** `npm run sync` no publica nada si el sanity check detecta incoherencias.

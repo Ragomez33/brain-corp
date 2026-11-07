@@ -12,7 +12,7 @@ const {
   readSystemMap,
   systemMapPath
 } = require('./lib/system-map')
-const { runSetupWizard, syncSpecifyConfig } = require('./setup-wizard')
+const { runSetupWizard } = require('./setup-wizard')
 
 // El workspace es siempre el directorio desde el que se invoca el CLI.
 const ROOT_DIR = process.cwd()
@@ -340,7 +340,7 @@ async function sessionMenu(rl, config) {
   console.log('\nSesión configurada:')
   console.log(`  Agente: ${agent}`)
   console.log(`  Foco:   ${focus}`)
-  console.log('\nSugerencia: usa /analyze <tema> para abrir un ticket o el flujo nativo de spec-kit (/speckit.specify) apuntando a .agents/tickets/<estado>/TICK-XXX.md para generar una spec.')
+  console.log('\nSugerencia: usa /cross-analyze <tema> para abrir un ticket o /init-work <TICK-XXX> para iniciar su spec SDD en .brain/features/.')
 
   return config
 }
@@ -486,22 +486,8 @@ async function main() {
       `[init-brain] Assets del agente verificados: ${provisioned.created.length} archivo(s) nuevos, ${provisioned.skipped.length} ya existentes.`
     )
     console.log(
-      `[init-brain] Prompts/skills/spec-kit desplegados en ${ROOT_DIR}.`
+      `[init-brain] Prompts/skills/templates SDD desplegados en ${ROOT_DIR}.`
     )
-
-    const specifyPath = syncSpecifyConfig(
-      ROOT_DIR,
-      getRegisteredRepositories(readSystemMap(ROOT_DIR))
-    )
-
-    if (specifyPath) {
-      console.log(
-        `[init-brain] Enrutamiento spec-kit verificado en ${path.relative(
-          ROOT_DIR,
-          specifyPath
-        )}.`
-      )
-    }
 
     await maybeStartWatcher(rl, config)
   } finally {

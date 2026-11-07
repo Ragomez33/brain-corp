@@ -11,8 +11,14 @@ const PACKAGE_PATH = path.join(ROOT_DIR, 'package.json')
 const COMMANDS = {
   init: { script: 'scripts/init-brain.js', description: 'Onboarding, sesión y lanzamiento del agente.' },
   start: { script: 'scripts/init-brain.js', description: 'Alias de init.' },
-  setup: { script: 'scripts/setup-wizard.js', description: 'Registrar sidecars y enrutamiento de spec-kit.' },
+  setup: { script: 'scripts/setup-wizard.js', description: 'Registrar sidecars y topología del ecosistema.' },
   'agents:sync': { script: 'scripts/sync-agents.js', description: 'Re-desplegar assets y comandos del motor de agente.' },
+  'init-work': { script: 'scripts/sdd.js', prepend: ['init-work'], description: 'Inicializar una feature SDD en .brain/.' },
+  specify: { script: 'scripts/sdd.js', prepend: ['specify'], description: 'Generar spec.md (EARS).' },
+  plan: { script: 'scripts/sdd.js', prepend: ['plan'], description: 'Generar plan.md.' },
+  tasks: { script: 'scripts/sdd.js', prepend: ['tasks'], description: 'Generar tasks.md.' },
+  implement: { script: 'scripts/sdd.js', prepend: ['implement'], description: 'Ejecutar tareas (checkpoint o batch).' },
+  analyze: { script: 'scripts/sdd.js', prepend: ['analyze'], description: 'Auditar coherencia y spec drift.' },
   sync: { script: 'scripts/sync-github.js', description: 'Publicar tickets del backlog como issues.' },
   'sync:pull': { script: 'scripts/sync-pull.js', description: 'Importar issues de GitHub como tickets.' },
   pull: { script: 'scripts/sync-pull.js', description: 'Alias de sync:pull.' },
@@ -110,7 +116,10 @@ function main() {
     return 1
   }
 
-  return runScript(command.script, argv.slice(1))
+  const rest = argv.slice(1)
+  const args = Array.isArray(command.prepend) ? [...command.prepend, ...rest] : rest
+
+  return runScript(command.script, args)
 }
 
 process.exitCode = main()

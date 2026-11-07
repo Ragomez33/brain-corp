@@ -22,6 +22,7 @@
     "El template base es neutro: no incluye sidecars por defecto.",
     "Usa `brain setup` para detectar repositorios con GitHub CLI (`gh repo list`) o registrarlos manualmente por URL o ruta local, asignando rol provider/client/standalone.",
     "El wizard genera rutas `sidecars/<nombre-repo>` y puede clonar los repositorios con `gh repo clone`.",
+    "El flujo SDD vive en `<repo>/.brain/` (active.json, templates y features/<TICK-XXX>/). Usa `brain init-work TICK-XXX` para iniciar una feature.",
     "Consulta config/system-map.example.json para ver un mapa poblado de referencia."
   ]
 }

@@ -27,7 +27,7 @@ Opciones:
   --help           Muestra esta ayuda.
 
 Sin --agent, usa defaultAgent de .brainrc.json (o "${DEFAULT_AGENT}").
-Re-despliega prompts, skills, spec-kit y comandos del motor sin abrir sesión.`)
+Re-despliega prompts, skills, plantillas SDD, constitución central y comandos del motor sin abrir sesión.`)
 }
 
 function parseArgs(argv) {

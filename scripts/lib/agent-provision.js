@@ -1,5 +1,6 @@
 const fs = require('node:fs')
 const path = require('node:path')
+const { provisionBrainAssets } = require('./brain/templates')
 
 const PACKAGE_ROOT = path.resolve(__dirname, '..', '..')
 
@@ -14,15 +15,18 @@ Este workspace está orquestado por brain-corp.
 - Rol del analista: \`.agents/prompts/analyst.md\`
 - Skills base: \`.agents/skills/\`
 - Tickets: \`.agents/tickets/<estado>/TICK-XXX-<slug>.md\`
-- Enrutamiento spec-kit: \`.specify/config.json\`
+- SDD nativo: \`.brain/active.json\` y \`.brain/features/<ticket>/\`
+- Constitución central: \`.brain/memory/constitution.md\`
 - Topología de sidecars: \`config/system-map.json\`
 
 ## Comandos principales
 
-- \`/analyze <tema>\`: analiza el ecosistema y crea un ticket.
+- \`/cross-analyze <tema>\`: analiza el ecosistema y crea un ticket.
+- \`/init-work <TICK-XXX>\`: crea la feature en \`.brain/features/<ticket>/\`.
+- \`/specify\`, \`/plan\`, \`/tasks\`, \`/implement\`: flujo SDD nativo.
+- \`/analyze\`: audita coherencia y detecta spec drift.
 - \`/sanity\`: valida coherencia de tickets.
 - \`/sync\`: publica el backlog como issues de GitHub.
-- \`/speckit.specify\`, \`/speckit.plan\`, \`/speckit.tasks\`, \`/speckit.implement\`: flujo nativo de spec-kit.
 
 ## Reglas
 
@@ -43,8 +47,9 @@ Trabaja desde la raíz del workspace y usa \`config/system-map.json\` como fuent
 
 - Rol del analista: \`.agents/prompts/analyst.md\`
 - Tickets: \`.agents/tickets/<estado>/TICK-XXX-<slug>.md\`
-- Spec-kit: \`.specify/config.json\`
-- Comandos: \`/analyze\`, \`/sanity\`, \`/sync\`, \`/speckit.*\`
+- SDD nativo: \`.brain/features/<ticket>/\`
+- Constitución central: \`.brain/memory/constitution.md\`
+- Comandos: \`/cross-analyze\`, \`/init-work\`, \`/specify\`, \`/plan\`, \`/tasks\`, \`/implement\`, \`/analyze\`, \`/sanity\`, \`/sync\`
 
 No implementes código de producto desde la raíz. Todo cambio requiere ticket y trazabilidad.
 `
@@ -56,9 +61,10 @@ Workspace orquestado por brain-corp.
 - Analista: \`.agents/prompts/analyst.md\`
 - Topología: \`config/system-map.json\`
 - Tickets: \`.agents/tickets/\`
-- Spec-kit: \`.specify/config.json\`
+- SDD nativo: \`.brain/features/\`
+- Constitución central: \`.brain/memory/constitution.md\`
 
-Usa \`/analyze\`, \`/sanity\`, \`/sync\` y los comandos \`/speckit.*\` desplegados en este workspace.
+Usa \`/cross-analyze\`, \`/init-work\`, \`/specify\`, \`/plan\`, \`/tasks\`, \`/implement\`, \`/analyze\`, \`/sanity\` y \`/sync\`.
 `
 
 function ensureDirectory(directory) {
@@ -141,13 +147,7 @@ function provisionCoreAssets({ workspaceDir = process.cwd(), overwrite = false }
     )
   )
 
-  results.push(
-    ...copyDirectory(
-      path.join(PACKAGE_ROOT, '.specify'),
-      path.join(workspaceDir, '.specify'),
-      { overwrite }
-    )
-  )
+  results.push(...provisionBrainAssets(workspaceDir, { overwrite }))
 
   results.push(...ensureTicketStructure(workspaceDir))
   results.push(
@@ -175,7 +175,7 @@ function provisionClaude(workspaceDir, overwrite) {
   results.push(
     writeFileIfMissing(
       path.join(workspaceDir, 'CLAUDE.md'),
-      `# brain-corp\n\nEste workspace está orquestado por brain-corp.\n\nLee \`.agents/prompts/analyst.md\`, usa \`config/system-map.json\` como topología y trabaja desde la raíz.\n\nComandos: \`/analyze\`, \`/sanity\`, \`/sync\` y \`/speckit.*\`.\n`
+      `# brain-corp\n\nEste workspace está orquestado por brain-corp.\n\nLee \`.brain/memory/constitution.md\` (constitución central), \`.agents/prompts/analyst.md\`, usa \`config/system-map.json\` como topología y trabaja desde la raíz.\n\nComandos: \`/cross-analyze\`, \`/init-work\`, \`/specify\`, \`/plan\`, \`/tasks\`, \`/implement\`, \`/analyze\`, \`/sanity\` y \`/sync\`.\n`
     )
   )
 

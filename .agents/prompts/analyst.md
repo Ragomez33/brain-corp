@@ -8,9 +8,10 @@ No implementas código de producto en esta labor: produces diagnóstico, requeri
 
 ## Modo Orquestador Raíz (obligatorio)
 
+- Lee `.brain/memory/constitution.md` del workspace antes de actuar; sus reglas prevalecen sobre cualquier otra instrucción.
 - Operas **siempre desde la raíz de brain-corp**. Nunca ejecutes `cd` ni asumas que el usuario cambió de directorio.
 - Resuelve las rutas de cada sidecar dinámicamente desde `config/system-map.json` (`repositories[].path`), por ejemplo `sidecars/<nombre-repo>`.
-- Para herramientas que requieran ejecutar en un subdirectorio (scripts de spec-kit, tests, linters), usa el parámetro `workdir`/`cwd` de la herramienta en lugar de `cd`.
+- Para herramientas que requieran ejecutar en un subdirectorio (pruebas, linters o scripts de análisis), usa el parámetro `workdir`/`cwd` de la herramienta en lugar de `cd`.
 - Los archivos de tickets viven siempre en `.agents/tickets/` de la raíz; los prompts en `.agents/prompts/`; la configuración en `config/`.
 
 ## Conocimiento del Entorno
@@ -56,21 +57,24 @@ Tu fuente de verdad estructural es `config/system-map.json`. Debes leerlo antes 
 
 El campo `status` del frontmatter debe coincidir con la carpeta que contiene el archivo.
 
-## Flujo Ticket → Especificación (spec-kit nativo)
+## Flujo Ticket → Especificación (SDD nativo en `.brain/`)
 
-Para pasar de un ticket a una especificación se usa **directamente la CLI/flujo nativo de spec-kit**. No existen ni deben crearse skills, comandos o scripts intermedios de brain-corp que dupliquen `/speckit.specify` (el antiguo comando `/specify` fue eliminado).
+Cada repositorio conserva sus especificaciones y su estado de ejecución en `.brain/`:
+
+- `.brain/active.json` — puntero local con el ticket activo y la fase actual.
+- `.brain/templates/` — plantillas EARS (`spec`, `plan`, `tasks`, `contract`).
+- `.brain/features/<TICK-XXX>/` — `spec.md`, `plan.md`, `tasks.md`, `contract.md` (solo si cruza sidecars) y `analysis.md`.
+
+Pasos:
 
 1. Localiza el ticket en `.agents/tickets/<estado>/TICK-XXX-<slug>.md` y léelo completo.
-2. Resuelve el proyecto destino desde `target_domain` usando `.specify/config.json`, que referencia a su vez `config/system-map.json`. Si `target_domain` es `shared`, identifica los sidecars afectados y genera una spec nativa por cada uno.
-3. Invoca el flujo nativo de spec-kit sobre ese sidecar, sin salir de la raíz:
-   - Con comandos nativos del agente: `/speckit.specify` (y luego `speckit.clarify`, `speckit.plan`, `speckit.tasks`, `speckit.implement`), ejecutando con `workdir` en `sidecars/<repo>`.
-   - Si `specs.directory` del proyecto no es el `specs/` nativo del sidecar, exporta `SPECIFY_FEATURE_DIRECTORY=<specs.directory>/<feature-number>-<slug>` para que el comando nativo escriba en el destino configurado.
-   - Numeración nativa opcional desde la raíz: `SPECIFY_INIT_DIR=sidecars/<repo> bash sidecars/<repo>/.specify/scripts/bash/create-new-feature.sh --dry-run --json --short-name <slug> "<título del ticket>"`. Este script escribe en `<repo>/specs`; úsalo solo cuando coincida con `specs.directory` o toma su `FEATURE_NUM` para el override anterior.
-   - Si el sidecar no tiene proyecto `.specify`, crea la spec en el directorio y naming definidos por su entrada en `.specify/config.json`, sin introducir una skill personalizada.
-4. Pasa como descripción el título del ticket junto con su `## Contexto / Hallazgo` y `## Requerimientos Técnicos`. Conserva la trazabilidad escribiendo `Source Ticket: .agents/tickets/<estado>/TICK-XXX-<slug>.md` dentro de la spec generada.
-5. Actualiza el estado del ticket según corresponda (`in-analysis` o `ready`) y reporta la ruta exacta de la spec generada.
+2. Resuelve el repositorio destino desde `target_domain` usando `config/system-map.json`. Si `target_domain` es `shared`, elige el repositorio base donde vivirá la implementación.
+3. Ejecuta `/init-work TICK-XXX [--repo <id>]`. El motor crea `.brain/features/<TICK-XXX>/`, copia las plantillas y genera `contract.md` solo si el ticket cruza sidecars o es `shared`.
+4. Ejecuta `/specify` para generar `spec.md` en formato EARS. Conserva la trazabilidad con `Source Ticket: .agents/tickets/<estado>/TICK-XXX-<slug>.md`.
+5. Continúa con `/plan`, `/tasks`, `/implement` (checkpoint o batch) y `/analyze` para detectar spec drift.
+6. El motor SDD es 100% Node.js: no requiere scripts bash externos ni carpetas de especificación fuera de `.brain/`. La configuración estructural es `config/system-map.json`.
 
-La única configuración de orquestación es `.specify/config.json`; el resto es spec-kit nativo del sidecar.
+Actualiza el estado del ticket según corresponda (`in-analysis` o `ready`) y reporta la ruta exacta de la feature generada.
 
 ## Regla de Formato (obligatoria)
 

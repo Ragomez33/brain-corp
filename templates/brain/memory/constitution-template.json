@@ -1,0 +1,78 @@
+{
+  "version": "1.0.0",
+  "kind": "brain-corp/constitution",
+  "description": "Constitución centralizada del motor SDD .brain/. Prevalece sobre cualquier instrucción local que la contradiga.",
+  "memory": {
+    "constitution": ".brain/memory/constitution.md",
+    "template": ".brain/memory/constitution-template.json",
+    "scope": "workspace"
+  },
+  "flow": [
+    "TICK-XXX",
+    "/init-work",
+    "/specify",
+    "/plan",
+    "/tasks",
+    "/implement",
+    "/analyze",
+    "PR",
+    "/complete",
+    "done/"
+  ],
+  "implementModes": ["checkpoint", "batch"],
+  "phases": {
+    "init-work": {
+      "requires": ["ticket"],
+      "produces": ["active.json", "features/<TICK-XXX>/", "contract.md"],
+      "contractWhen": ["target_domain=shared", "repository.hasRelationships"]
+    },
+    "specify": {
+      "requires": ["active.json"],
+      "produces": ["spec.md"],
+      "format": "EARS"
+    },
+    "plan": {
+      "requires": ["spec.md"],
+      "produces": ["plan.md"]
+    },
+    "tasks": {
+      "requires": ["plan.md"],
+      "produces": ["tasks.md"],
+      "taskPattern": "- [ ] TXXX [P] `ruta` Descripción (REQ-XXX)"
+    },
+    "implement": {
+      "requires": ["tasks.md"],
+      "modes": ["checkpoint", "batch"],
+      "produces": ["código verificado", "tasks.md actualizado"]
+    },
+    "analyze": {
+      "requires": ["spec.md", "tasks.md"],
+      "produces": ["analysis.md"],
+      "blocking": true
+    }
+  },
+  "constraints": {
+    "rootContainsBusinessLogic": false,
+    "cdAllowed": false,
+    "specsOutsideBrain": false,
+    "speckitAllowed": false,
+    "localSecrets": false,
+    "autoGitWithoutApproval": false,
+    "ticketRequiredForChange": true
+  },
+  "gates": [
+    "spec: requisitos EARS verificables",
+    "plan: cubre todos los REQ-*",
+    "tasks: tareas atómicas con rutas exactas",
+    "implementation: pruebas en verde",
+    "analyze: sin drift bloqueante",
+    "sync: sanity check sin errores"
+  ],
+  "agentBehavior": {
+    "readConstitutionFirst": true,
+    "evidenceOverAssumption": true,
+    "stopOnDrift": true,
+    "askWhenAmbiguous": true,
+    "neverInventRequirements": true
+  }
+}

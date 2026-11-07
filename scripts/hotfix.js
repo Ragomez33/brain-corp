@@ -155,7 +155,7 @@ function buildTicketBody({ title, context, specImpact, module, domain, repoRelat
   const contextText =
     context && context.trim()
       ? context.trim()
-      : 'Corrección urgente fuera del flujo spec-kit completo. El alcance debe mantenerse mínimo y verificable.'
+      : 'Corrección urgente fuera del flujo SDD completo. El alcance debe mantenerse mínimo y verificable.'
 
   return [
     '## Contexto / Hallazgo',

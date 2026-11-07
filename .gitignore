@@ -3,6 +3,7 @@ node_modules/
 .env.*
 !.env.example
 .brainrc.json
+.brain/active.json
 .agents/watch.log
 .agents/tickets/.sanity-check.json
 .DS_Store

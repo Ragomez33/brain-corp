@@ -17,16 +17,7 @@
         "catalog",
         "accounts",
         "reports"
-      ],
-      "specs": {
-        "directory": "sidecars/example-api/specs",
-        "layout": "feature-folder",
-        "file": "spec.md",
-        "naming": "<feature-number>-<slug>",
-        "template": null,
-        "constitution": "sidecars/example-api/constitution.md",
-        "specKitScript": null
-      }
+      ]
     },
     {
       "id": "example-web",
@@ -43,16 +34,7 @@
         "catalog",
         "accounts",
         "settings"
-      ],
-      "specs": {
-        "directory": "sidecars/example-web/specs",
-        "layout": "flat",
-        "file": "<ticket-id>-<slug>.spec.md",
-        "naming": "<ticket-id>-<slug>",
-        "template": null,
-        "constitution": "sidecars/example-web/constitution.md",
-        "specKitScript": null
-      }
+      ]
     },
     {
       "id": "example-app",
@@ -66,16 +48,7 @@
         "dashboard",
         "settings",
         "backup"
-      ],
-      "specs": {
-        "directory": "sidecars/example-app/specs",
-        "layout": "feature-folder",
-        "file": "spec.md",
-        "naming": "<feature-number>-<slug>",
-        "template": null,
-        "constitution": "sidecars/example-app/constitution.md",
-        "specKitScript": null
-      }
+      ]
     }
   ],
   "relationships": [
