@@ -1,8 +1,30 @@
 {
   "name": "brain-corp",
   "version": "1.0.0",
-  "private": true,
   "description": "CLI de orquestación de ecosistemas multi-repositorio: topología de sidecars, tickets y sincronización con GitHub Issues.",
+  "license": "MIT",
+  "author": "Ragomez33",
+  "homepage": "https://github.com/Ragomez33/brain-corp#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ragomez33/brain-corp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Ragomez33/brain-corp/issues"
+  },
+  "keywords": [
+    "cli",
+    "orchestration",
+    "multi-repo",
+    "monorepo",
+    "tickets",
+    "github-issues",
+    "spec-kit",
+    "agents"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "brain": "./bin/brain.js"
   },
@@ -15,7 +37,8 @@
     ".opencode/commands/",
     ".specify/",
     "README.md",
-    "constitution.md"
+    "constitution.md",
+    "LICENSE"
   ],
   "scripts": {
     "brain": "node bin/brain.js",
