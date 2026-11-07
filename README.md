@@ -1,5 +1,8 @@
 # brain-corp
 
+[![npm version](https://img.shields.io/npm/v/@rgkoko/brain-corp.svg?color=blue)](https://www.npmjs.com/package/@rgkoko/brain-corp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 CLI de orquestación para ecosistemas multi-repositorio: mantiene juntos varios productos o servicios independientes, centraliza la topología de sidecars y coordina el análisis, la creación y la sincronización de tickets con GitHub Issues.
 
 ## ¿Por qué existe este proyecto?
