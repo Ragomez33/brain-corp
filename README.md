@@ -69,6 +69,8 @@ When finished, it opens the configured agent.
 - **Base templates:** `templates/brain/en/` is the default and guarantees maximum precision with AI models. `templates/brain/es/` is available when Spanish is selected. Agent assets (`analyst.md`, skills, commands and rules) live in `templates/agents/en|es/` and provisioning copies those of the selected language.
 - **Constitution:** `.brain/memory/constitution.md` stays in English as the canonical source.
 - **Artifacts:** `spec.md`, `plan.md`, `tasks.md` and `contract.md` are generated with the template of the configured language, and the commands instruct the agent to write in that language.
+- **Validation:** ticket section names, API requirement patterns and security keywords come from `templates/i18n/<lang>/validation.json`. Canonical English headers and legacy Spanish headers are both accepted.
+- **Pull requests:** `brain pr` uses `templates/pr/en/` or `templates/pr/es/` according to the workspace language.
 
 ### 2. GitHub Issues synchronization
 
