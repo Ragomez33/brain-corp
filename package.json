@@ -34,9 +34,10 @@
     "scripts",
     "dist",
     "config",
-    ".agents",
-    ".opencode",
     "templates",
+    ".agents/prompts",
+    ".agents/skills",
+    ".opencode/commands",
     "LICENSE",
     "README.md",
     "constitution.md"
