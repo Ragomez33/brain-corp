@@ -17,7 +17,7 @@ Los ecosistemas multi-repositorio suelen parecer correctos repo por repo, pero f
 brain-corp/                     ← raíz de orquestación (este repo)
 ├── config/system-map.json      ← topología activa (se genera con brain setup)
 ├── config/system-map.example.json
-├── templates/brain/            ← plantillas EARS + memoria (constitución central)
+├── templates/                  ← assets de distribución: brain/ (SDD) y agents/{en,es}/
 ├── .agents/
 │   ├── prompts/analyst.md      ← rol del Arquitecto Analista
 │   └── tickets/                ← estados de tickets (se crean bajo demanda)
@@ -64,7 +64,7 @@ Al terminar, abre el agente configurado.
 
 `brain init` pregunta `Select your preferred language / Selecciona tu idioma` y guarda `language` en `.brain/config.json`.
 
-- **Plantillas base:** `templates/brain/en/` es el valor por defecto y garantiza la máxima precisión con modelos de IA. `templates/brain/es/` está disponible cuando se elige español.
+- **Plantillas base:** `templates/brain/en/` es el valor por defecto y garantiza la máxima precisión con modelos de IA. `templates/brain/es/` está disponible cuando se elige español. Los assets de agente (`analyst.md`, skills, comandos y reglas) viven en `templates/agents/en|es/` y el aprovisionamiento copia los del idioma elegido.
 - **Constitución:** `.brain/memory/constitution.md` se mantiene en inglés como fuente canónica.
 - **Artefactos:** `spec.md`, `plan.md`, `tasks.md` y `contract.md` se generan con la plantilla del idioma configurado, y los comandos indican al agente redactar en ese idioma.
 
@@ -138,6 +138,7 @@ npm run setup         # detectar repos con gh, asignar roles y generar sidecars/
 npm run init-brain    # onboarding + sesión + watcher opcional + lanza el agente
 npm run init-brain -- --lang es   # fijar idioma sin preguntar (en | es)
 npm run agents:sync   # re-desplegar prompts, skills y comandos del motor de agente
+npm run reset -- --repo <id>   # vaciar el estado activo (.brain/active.json)
 npm run sync:pull     # importar issues a tickets
 npm run sync          # publicar tickets como issues
 npm run watch         # sincronización continua
@@ -160,6 +161,8 @@ brain setup           # descubre repos con gh api, multi-select y asignación de
 brain setup --manual  # omite GitHub y registra por URL o ruta local
 brain init            # onboarding + sesión + lanzamiento del agente
 brain agents:sync     # re-desplegar assets del motor (--agent, --overwrite)
+brain reset --repo <id>   # vaciar el estado activo de un repositorio
+brain reset --all         # vaciar el estado activo de todos los repositorios
 brain init-work TICK-XXX  # crear feature en .brain/features/<ticket>/
 brain specify TICK-XXX    # generar spec.md EARS
 brain plan TICK-XXX       # generar plan.md
@@ -209,6 +212,8 @@ npm run build   # genera dist/ (incluido en el paquete publicado)
 - **`config/system-map.example.json`** — mapa poblado de referencia con sidecars provider/client/standalone. Cópialo sobre `system-map.json` si quieres partir de una topología de ejemplo.
 - **`.brain/`** — en cada repositorio: `active.json`, `templates/` y `features/<TICK-XXX>/` (`spec.md`, `plan.md`, `tasks.md`, `contract.md`, `analysis.md`). Es la fuente de verdad del SDD.
 - **`templates/brain/`** — plantillas EARS que el motor copia a `<repo>/.brain/templates/` en `init-work`. Contiene `en/` (inglés, por defecto), `es/` (español) y `memory/` (constitución central en inglés).
+- **`templates/agents/`** — assets de distribución por idioma (`en/`, `es/`) para prompts, skills, comandos y reglas. `brain init`/`agents:sync` copian solo los del idioma activo; el paquete npm ya no depende de `.opencode/` ni `.agents/` de desarrollo.
+- **`.brain/.gitignore`** — generado automáticamente con `active.json` para evitar versionar el estado local. `brain complete` y `brain reset` limpian el puntero activo.
 - **`.brain/memory/constitution.md`** — constitución centralizada del ecosistema. `brain init` y `brain setup` la despliegan en el workspace si no existe (nunca sobrescriben una personalizada). `constitution-template.json` expone las mismas reglas en formato máquina.
 - **`.agents/prompts/`** — comportamiento del analista (rol, protocolo, formato de tickets).
 - **`.agents/skills/`** — skills base aprovisionadas (`brain-corp`, `sdd-brain`, `ticket-ops`).

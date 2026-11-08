@@ -1,0 +1,16 @@
+---
+description: brain-corp orchestration rules
+alwaysApply: true
+---
+
+# brain-corp
+
+Trabaja desde la raíz del workspace y usa `config/system-map.json` como fuente de verdad de los sidecars.
+
+- Rol del analista: `.agents/prompts/analyst.md`
+- Tickets: `.agents/tickets/<estado>/TICK-XXX-<slug>.md`
+- SDD nativo: `.brain/features/<ticket>/`
+- Constitución central: `.brain/memory/constitution.md`
+- Comandos: `/cross-analyze`, `/init-work`, `/specify`, `/plan`, `/tasks`, `/implement`, `/analyze`, `/sanity`, `/sync`
+
+No implementes código de producto desde la raíz. Todo cambio requiere ticket y trazabilidad.

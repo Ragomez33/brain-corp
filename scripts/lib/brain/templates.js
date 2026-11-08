@@ -1,6 +1,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { resolveLanguage } = require('../config')
+const { ensureBrainGitignore } = require('./state')
 
 const PACKAGE_ROOT = path.resolve(__dirname, '..', '..', '..')
 const PACKAGE_TEMPLATES_DIR = path.join(PACKAGE_ROOT, 'templates', 'brain')
@@ -94,12 +95,14 @@ function provisionBrainAssets(workspaceDir, { overwrite = false, language } = {}
   const resolvedLanguage = language || resolveLanguage(workspaceDir)
   const templates = ensureTemplates(workspaceDir, { overwrite, language: resolvedLanguage })
   const memory = ensureMemory(workspaceDir, { overwrite })
+  const gitignore = ensureBrainGitignore(workspaceDir)
 
   return [
     ...templates.created.map(file => ({ created: true, path: file })),
     ...templates.skipped.map(file => ({ created: false, path: file })),
     ...memory.created.map(file => ({ created: true, path: file })),
-    ...memory.skipped.map(file => ({ created: false, path: file }))
+    ...memory.skipped.map(file => ({ created: false, path: file })),
+    { created: gitignore.created, path: gitignore.path }
   ]
 }
 

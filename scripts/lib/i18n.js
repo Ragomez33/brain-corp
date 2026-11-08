@@ -17,6 +17,7 @@ const MESSAGES = {
     'bin.cmd.start': 'Alias of init.',
     'bin.cmd.setup': 'Register sidecars and ecosystem topology.',
     'bin.cmd.agentsSync': 'Redeploy agent assets and commands.',
+    'bin.cmd.reset': 'Clear the active feature state of a repository.',
     'bin.cmd.audit': 'Enterprise audits (license required).',
     'bin.cmd.initWork': 'Initialize an SDD feature in .brain/.',
     'bin.cmd.specify': 'Generate spec.md (EARS).',
@@ -47,7 +48,7 @@ const MESSAGES = {
     'init.watcherActive': 'Watcher already active (PID {pid}).',
     'init.watcherPrompt': 'Enable real-time watcher (every 45s)?',
     'init.watcherOff': 'Watcher not enabled.',
-    'init.watcherStarted': 'Watcher started in background (PID {pid}). Log: {log}',
+    'init.watcherStarted': 'Watcher started in background (PID {pid}).',
     'init.onboardingTitle': '=== brain-corp · Initial onboarding ===',
     'init.githubUserDetected': 'GitHub user detected: {user}',
     'init.configSaved': 'Configuration saved to .brainrc.json:',
@@ -182,6 +183,7 @@ License activation:
     'complete.issueClosed': '[complete-ticket] Issue #{issue} closed on GitHub.',
     'complete.issueCloseError': '[complete-ticket] Could not close issue #{issue}: {error}',
     'complete.issueCloseSkipped': '[complete-ticket] Issue close skipped: {reason}',
+    'complete.activeCleared': '[complete-ticket] Active state cleared: {file}',
     'complete.reasonNoIssue': 'The ticket has no github_issue.',
     'complete.reasonSkipClose': 'Close skipped with --skip-close.',
     'complete.reasonDryRun': 'dry-run: gh issue close was not executed.',
@@ -322,9 +324,34 @@ Flow:
     'watch.unknownArg': '[watch-github] Unrecognized argument: {arg}',
     'watch.invalidInterval': '[watch-github] The interval must be a positive number of seconds.',
 
+    'reset.help': `brain-corp reset
+
+Usage:
+  brain reset --repo <id> [--root <dir>]
+  brain reset --all [--root <dir>]
+
+Options:
+  --repo <id>    Clear the active state (.brain/active.json) of one repository.
+  --all          Clear active state in every registered repository.
+  --root <dir>   Workspace root (defaults to current directory).
+  --json         Print the result as JSON.
+  --help         Show this help.`,
+    'reset.missingValue': 'Missing value for {option}',
+    'reset.unknownOption': 'Unknown option: {option}',
+    'reset.needTarget': 'Specify --repo <id> or --all.',
+    'reset.unknownRepo': 'No registered repository matches "{repo}".',
+    'reset.removed': '[reset] Cleared {file}',
+    'reset.notFound': '[reset] No active state at {file}',
+    'reset.summary': '[reset] Summary: {removed} cleared, {missing} without active state.',
+
     'prompts.cancelled': 'cancelled',
     'prompts.selected': '{count} selected',
     'prompts.none': 'no selection',
+    'prompts.yes': 'Yes',
+    'prompts.no': 'No',
+    'prompts.yesNoSuffix': '({yes}/{no})',
+    'prompts.helpMultiple': '  ↑/↓ move · space select/deselect · Enter confirm · a all · q cancel',
+    'prompts.helpSingle': '  ↑/↓ move · Enter select · q cancel',
 
     'agents.help': `brain-corp agents:sync
 
@@ -371,6 +398,7 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'bin.cmd.start': 'Alias de init.',
     'bin.cmd.setup': 'Registrar sidecars y topología del ecosistema.',
     'bin.cmd.agentsSync': 'Re-desplegar assets y comandos del motor de agente.',
+    'bin.cmd.reset': 'Vaciar el estado activo de un repositorio.',
     'bin.cmd.audit': 'Auditorías Enterprise (requiere licencia).',
     'bin.cmd.initWork': 'Inicializar una feature SDD en .brain/.',
     'bin.cmd.specify': 'Generar spec.md (EARS).',
@@ -401,7 +429,7 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'init.watcherActive': 'Watcher ya activo (PID {pid}).',
     'init.watcherPrompt': '¿Activar watcher en tiempo real (cada 45s)?',
     'init.watcherOff': 'Watcher no activado.',
-    'init.watcherStarted': 'Watcher iniciado en segundo plano (PID {pid}). Log: {log}',
+    'init.watcherStarted': 'Watcher iniciado en segundo plano (PID {pid}).',
     'init.onboardingTitle': '=== brain-corp · Onboarding inicial ===',
     'init.githubUserDetected': 'Usuario de GitHub detectado: {user}',
     'init.configSaved': 'Configuración guardada en .brainrc.json:',
@@ -536,6 +564,7 @@ Activación de licencia:
     'complete.issueClosed': '[complete-ticket] Issue #{issue} cerrado en GitHub.',
     'complete.issueCloseError': '[complete-ticket] No se pudo cerrar el issue #{issue}: {error}',
     'complete.issueCloseSkipped': '[complete-ticket] Cierre de issue omitido: {reason}',
+    'complete.activeCleared': '[complete-ticket] Estado activo limpiado: {file}',
     'complete.reasonNoIssue': 'El ticket no tiene github_issue.',
     'complete.reasonSkipClose': 'Cierre omitido con --skip-close.',
     'complete.reasonDryRun': 'dry-run: no se ejecutó gh issue close.',
@@ -676,9 +705,34 @@ Flujo:
     'watch.unknownArg': '[watch-github] Argumento no reconocido: {arg}',
     'watch.invalidInterval': '[watch-github] El intervalo debe ser un número positivo de segundos.',
 
+    'reset.help': `brain-corp reset
+
+Uso:
+  brain reset --repo <id> [--root <dir>]
+  brain reset --all [--root <dir>]
+
+Opciones:
+  --repo <id>    Vacía el estado activo (.brain/active.json) de un repositorio.
+  --all          Vacía el estado activo en todos los repositorios registrados.
+  --root <dir>   Raíz del workspace (por defecto, el directorio actual).
+  --json         Imprime el resultado en JSON.
+  --help         Muestra esta ayuda.`,
+    'reset.missingValue': 'Falta el valor para {option}',
+    'reset.unknownOption': 'Opción desconocida: {option}',
+    'reset.needTarget': 'Indica --repo <id> o --all.',
+    'reset.unknownRepo': 'Ningún repositorio registrado coincide con "{repo}".',
+    'reset.removed': '[reset] Estado activo limpiado: {file}',
+    'reset.notFound': '[reset] Sin estado activo en {file}',
+    'reset.summary': '[reset] Resumen: {removed} limpiados, {missing} sin estado activo.',
+
     'prompts.cancelled': 'cancelado',
     'prompts.selected': '{count} seleccionado(s)',
     'prompts.none': 'sin selección',
+    'prompts.yes': 'Sí',
+    'prompts.no': 'No',
+    'prompts.yesNoSuffix': '({yes}/{no})',
+    'prompts.helpMultiple': '  ↑/↓ mover · espacio marcar/desmarcar · Enter confirmar · a todos · q cancelar',
+    'prompts.helpSingle': '  ↑/↓ mover · Enter seleccionar · q cancelar',
 
     'agents.help': `brain-corp agents:sync
 

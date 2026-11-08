@@ -38,9 +38,19 @@ function updateActive(repoDir, updates) {
   return writeActive(repoDir, { ...current, ...updates })
 }
 
+function ensureBrainGitignore(repoDir) {
+  const file = path.join(brainDir(repoDir), '.gitignore')
+  if (fs.existsSync(file)) return { created: false, path: file }
+
+  fs.mkdirSync(path.dirname(file), { recursive: true })
+  fs.writeFileSync(file, 'active.json\n', 'utf8')
+  return { created: true, path: file }
+}
+
 module.exports = {
   activePath,
   brainDir,
+  ensureBrainGitignore,
   readActive,
   updateActive,
   writeActive

@@ -14,6 +14,7 @@ const COMMANDS = {
   start: { script: 'scripts/init-brain.js', descriptionKey: 'bin.cmd.start' },
   setup: { script: 'scripts/setup-wizard.js', descriptionKey: 'bin.cmd.setup' },
   'agents:sync': { script: 'scripts/sync-agents.js', descriptionKey: 'bin.cmd.agentsSync' },
+  reset: { script: 'scripts/reset.js', descriptionKey: 'bin.cmd.reset' },
   audit: { script: 'scripts/audit.js', descriptionKey: 'bin.cmd.audit' },
   'init-work': { script: 'scripts/sdd.js', prepend: ['init-work'], descriptionKey: 'bin.cmd.initWork' },
   specify: { script: 'scripts/sdd.js', prepend: ['specify'], descriptionKey: 'bin.cmd.specify' },

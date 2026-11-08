@@ -1,7 +1,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { resolveContext } = require('./context')
-const { readActive, writeActive, updateActive } = require('./state')
+const { readActive, writeActive, updateActive, ensureBrainGitignore } = require('./state')
 const { ensureTemplates, scaffoldFromTemplate } = require('./templates')
 const { resolveLanguage } = require('../config')
 
@@ -48,6 +48,7 @@ function initWork({ ticketId, repoId, force = false }) {
 
   fs.mkdirSync(ctx.featureDir, { recursive: true })
   const templates = ensureTemplates(ctx.repoDir, { language })
+  const gitignore = ensureBrainGitignore(ctx.repoDir)
 
   let contract = null
   if (ctx.contractRequired) {
@@ -72,7 +73,7 @@ function initWork({ ticketId, repoId, force = false }) {
     mode: null
   })
 
-  return { ctx, templates, contract, language }
+  return { ctx, templates, contract, language, gitignore }
 }
 
 function specify({ ticketId, repoId, force = false }) {

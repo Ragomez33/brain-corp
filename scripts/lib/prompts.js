@@ -51,9 +51,7 @@ function promptSelection(
       const visible = choices.slice(start, start + pageSize)
       const lines = [
         `? ${message}`,
-        multiple
-          ? '  ↑/↓ mover · espacio marcar/desmarcar · Enter confirmar · a todos · q cancelar'
-          : '  ↑/↓ mover · Enter seleccionar · q cancelar'
+        multiple ? t('prompts.helpMultiple') : t('prompts.helpSingle')
       ]
 
       visible.forEach((choice, offset) => {
@@ -209,8 +207,8 @@ async function confirm(rl, message, defaultValue = false) {
     const selected = await promptSelection(rl, {
       message,
       choices: [
-        { name: 'Sí', value: true },
-        { name: 'No', value: false }
+        { name: t('prompts.yes'), value: true },
+        { name: t('prompts.no'), value: false }
       ],
       pageSize: 2,
       multiple: false,
@@ -221,7 +219,12 @@ async function confirm(rl, message, defaultValue = false) {
     return Boolean(selected.value)
   }
 
-  const suffix = defaultValue ? '(S/n)' : '(s/N)'
+  const yes = t('prompts.yes')
+  const no = t('prompts.no')
+  const suffix = t('prompts.yesNoSuffix', {
+    yes: defaultValue ? yes[0].toUpperCase() : yes[0].toLowerCase(),
+    no: defaultValue ? no[0].toLowerCase() : no[0].toUpperCase()
+  })
   const answer = (await rl.question(`${message} ${suffix}: `)).trim().toLowerCase()
 
   if (!answer) return defaultValue

@@ -5,7 +5,6 @@ dist/
 !.env.example
 .brainrc.json
 .brain/active.json
-.agents/watch.log
 .agents/tickets/.sanity-check.json
 .DS_Store
 

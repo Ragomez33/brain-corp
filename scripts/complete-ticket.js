@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const fs = require('node:fs')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const {
@@ -10,6 +11,7 @@ const {
   moveTicket,
   inferIssueNumber
 } = require('./lib/tickets')
+const { getRegisteredRepositories, readSystemMap } = require('./lib/system-map')
 const { t } = require('./lib/i18n')
 
 const DELIVERY_SECTION = '## Entrega'
@@ -91,6 +93,38 @@ function findTicket(ticketId) {
   }
 
   return matches[0]
+}
+
+function clearActiveForTicket(ticket, ticketId) {
+  const domain = String(ticket.data.target_domain || '').toLowerCase()
+  const repositories = getRegisteredRepositories(readSystemMap(ROOT_DIR))
+  const preferred = repositories.filter(
+    repository => String(repository.id || '').toLowerCase() === domain
+  )
+  const candidates = preferred.length > 0 ? preferred : repositories
+
+  for (const repository of candidates) {
+    const activeFile = path.join(
+      ROOT_DIR,
+      repository.path || '.',
+      '.brain',
+      'active.json'
+    )
+
+    if (!fs.existsSync(activeFile)) continue
+
+    try {
+      const active = JSON.parse(fs.readFileSync(activeFile, 'utf8'))
+      if (String(active.ticketId || '').toUpperCase() === String(ticketId).toUpperCase()) {
+        fs.unlinkSync(activeFile)
+        return path.relative(ROOT_DIR, activeFile)
+      }
+    } catch {
+      // Ignore malformed or inaccessible active state.
+    }
+  }
+
+  return null
 }
 
 function buildDeliverySection({ prRef, completedAt }) {
@@ -181,10 +215,12 @@ function main() {
 
   let finalPath = ticket.filePath
   let closeResult = { closed: false, skipped: true, reason: 'dry-run' }
+  let clearedActive = null
 
   if (!args.dryRun) {
     writeTicket(ticket.filePath, rawWithContent)
     finalPath = moveTicket(ticket.filePath, 'done')
+    clearedActive = clearActiveForTicket(ticket, ticketId)
     closeResult = closeIssue({
       issueNumber,
       prRef,
@@ -204,6 +240,7 @@ function main() {
     closed: closeResult.closed,
     close_skipped: closeResult.skipped,
     close_error: closeResult.error || null,
+    active_cleared: clearedActive,
     dry_run: Boolean(args.dryRun)
   }
 
@@ -211,6 +248,7 @@ function main() {
     console.log(JSON.stringify(result, null, 2))
   } else {
     console.log(t('complete.done', { ticket: ticketId, path: result.ticket }))
+    if (clearedActive) console.log(t('complete.activeCleared', { file: clearedActive }))
     if (prRef) console.log(t('complete.prRegistered', { pr: prRef }))
     if (closeResult.closed) {
       console.log(t('complete.issueClosed', { issue: issueNumber }))

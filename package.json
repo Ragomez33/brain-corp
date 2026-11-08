@@ -35,9 +35,6 @@
     "dist",
     "config",
     "templates",
-    ".agents/prompts",
-    ".agents/skills",
-    ".opencode/commands",
     "LICENSE",
     "README.md",
     "constitution.md"
@@ -51,6 +48,7 @@
     "setup": "node scripts/setup-wizard.js",
     "init-brain": "node scripts/init-brain.js",
     "agents:sync": "node scripts/sync-agents.js",
+    "reset": "node scripts/reset.js",
     "sdd": "node scripts/sdd.js",
     "init-work": "node scripts/sdd.js init-work",
     "specify": "node scripts/sdd.js specify",

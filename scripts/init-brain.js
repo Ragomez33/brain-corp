@@ -21,7 +21,6 @@ const ROOT_DIR = process.cwd()
 const CONFIG_PATH = path.join(ROOT_DIR, '.brainrc.json')
 const SYNC_PULL_PATH = path.join(__dirname, 'sync-pull.js')
 const WATCH_PATH = path.join(__dirname, 'watch-github.js')
-const WATCH_LOG = '.agents/watch.log'
 
 const AGENTS = [
   { value: 'opencode', label: 'opencode' },
@@ -305,7 +304,7 @@ async function maybeStartWatcher(rl, config) {
 
   fs.mkdirSync(path.join(ROOT_DIR, '.agents'), { recursive: true })
 
-  const child = spawn(buildNodeCommand(WATCH_PATH, ['--log', WATCH_LOG]), {
+  const child = spawn(buildNodeCommand(WATCH_PATH), {
     cwd: ROOT_DIR,
     detached: true,
     stdio: 'ignore',
@@ -319,7 +318,7 @@ async function maybeStartWatcher(rl, config) {
   config.updatedAt = now
   writeConfig(config)
 
-  console.log(t('init.watcherStarted', { pid: child.pid, log: WATCH_LOG }))
+  console.log(t('init.watcherStarted', { pid: child.pid }))
 
   return config
 }
