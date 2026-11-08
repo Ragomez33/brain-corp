@@ -124,23 +124,11 @@ function main() {
   }
 
   try {
-    const { report, license } = audit.runAudit(args.name, {
+    const { report } = audit.runAudit(args.name, {
       root: args.root,
       repo: args.repo,
       ticket: args.ticket
     })
-
-    if (license && license.bypass) {
-      const modeKey =
-        license.bypass === 'master-key'
-          ? 'audit.founderMaster'
-          : license.bypass === 'env-flag'
-            ? 'audit.founderFlag'
-            : 'audit.founderDev'
-      console.error(
-        `${COLORS.yellow}${t('audit.founderWarning', { mode: t(modeKey) })}${COLORS.reset}`
-      )
-    }
 
     if (args.json) {
       console.log(JSON.stringify(report, null, 2))

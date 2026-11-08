@@ -1,6 +1,6 @@
 {
   "name": "@rgkoko/brain-corp",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "CLI de orquestación de ecosistemas multi-repositorio: topología de sidecars, tickets y sincronización con GitHub Issues.",
   "license": "MIT",
   "author": "Ragomez33",

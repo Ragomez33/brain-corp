@@ -23,8 +23,7 @@ export interface LicensePayload {
 
 export interface LicenseInfo {
   payload: LicensePayload
-  source: 'env' | 'config' | 'bypass'
-  bypass?: 'development' | 'env-flag' | 'master-key'
+  source: 'env' | 'config'
   expiresAt: string | null
 }
 
@@ -39,8 +38,6 @@ export class LicenseError extends Error {
 }
 
 const ENTERPRISE_PLANS = new Set(['enterprise', 'enterprise-plus', 'enterprise_plus'])
-const FOUNDER_MASTER_KEY_HASH =
-  'b60210cfa0f110f9fb8c87a10794cb75f803f4227bf69f1fda8119108ae3fef6'
 
 type Lang = 'en' | 'es'
 
@@ -96,55 +93,6 @@ function msg(key: string, params: Record<string, string> = {}): string {
   return template.replace(/\{\{?\s*([A-Za-z0-9_.-]+)\s*\}?\}/g, (match, name) => {
     return Object.prototype.hasOwnProperty.call(params, name) ? params[name] : match
   })
-}
-
-function safeEqualHex(left: string, right: string): boolean {
-  let leftBuffer: Buffer
-  let rightBuffer: Buffer
-
-  try {
-    leftBuffer = Buffer.from(left, 'hex')
-    rightBuffer = Buffer.from(right, 'hex')
-  } catch {
-    return false
-  }
-
-  if (leftBuffer.length === 0 || leftBuffer.length !== rightBuffer.length) return false
-  return crypto.timingSafeEqual(leftBuffer, rightBuffer)
-}
-
-function founderLicense(bypass: LicenseInfo['bypass']): LicenseInfo {
-  return {
-    payload: {
-      sub: 'founder',
-      plan: 'enterprise',
-      features: ['*'],
-      iat: Math.floor(Date.now() / 1000)
-    },
-    source: 'bypass',
-    bypass,
-    expiresAt: null
-  }
-}
-
-export function resolveBypass(): LicenseInfo | null {
-  if (process.env.BRAIN_ENV === 'development') {
-    return founderLicense('development')
-  }
-
-  if (String(process.env.BRAIN_BYPASS_LICENSE || '').trim().toLowerCase() === 'true') {
-    return founderLicense('env-flag')
-  }
-
-  const masterKey = String(process.env.BRAIN_MASTER_KEY || '').trim()
-  if (!masterKey) return null
-
-  const actual = crypto.createHash('sha256').update(masterKey).digest('hex')
-  const expected = String(process.env.BRAIN_MASTER_KEY_HASH || FOUNDER_MASTER_KEY_HASH)
-    .trim()
-    .toLowerCase()
-
-  return safeEqualHex(actual, expected) ? founderLicense('master-key') : null
 }
 
 export function configPath(): string {
@@ -316,9 +264,6 @@ export function verifyLicenseToken(
 }
 
 export function requireEnterpriseLicense(): LicenseInfo {
-  const bypass = resolveBypass()
-  if (bypass) return bypass
-
   const resolved = resolveLicenseToken()
 
   if (!resolved) {
