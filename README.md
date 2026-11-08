@@ -21,7 +21,10 @@ brain-corp/                     ← raíz de orquestación (este repo)
 ├── .agents/
 │   ├── prompts/analyst.md      ← rol del Arquitecto Analista
 │   └── tickets/                ← estados de tickets (se crean bajo demanda)
-├── scripts/                    ← setup, sync, watch, normalize, tickets
+├── scripts/                    ← onboarding, SDD, sync, auditoría, i18n y agentes
+├── src/                        ← módulos TypeScript (licencia y auditorías Enterprise)
+├── dist/                       ← build de TypeScript (se genera con npm run build)
+├── tsconfig.json               ← configuración del build Enterprise
 ├── bin/brain.js                ← binario global `brain`
 └── sidecars/                   ← carpeta vacía; aquí viven los repositorios registrados
 ```
@@ -50,6 +53,7 @@ Al elegir el agente, `brain init` aprovisiona automáticamente el workspace:
 
 - `.agents/prompts/` y `.agents/skills/` con el rol del analista y las skills base.
 - `.brain/templates/` con las plantillas EARS del motor SDD.
+- `.brain/memory/` con la constitución central (`constitution.md` y `constitution-template.json`).
 - `.opencode/commands/` para OpenCode (`/cross-analyze`, `/init-work`, `/specify`, `/plan`, `/tasks`, `/implement`, `/analyze`, `/sanity`, `/sync`).
 - Estructuras equivalentes para Claude Code (`.claude/commands/`), Cursor (`.cursor/rules/`) o Antigravity (`.antigravity/rules/`).
 - `AGENTS.md` como punto de entrada genérico para otros agentes.
@@ -70,7 +74,7 @@ Al terminar, abre el agente configurado.
 - `npm run sync:pull` — trae issues (abiertos y cerrados) como tickets locales, infiere estado (`backlog`/`done`) y marca como `needs_formatting` los que no tienen frontmatter válido.
 - `npm run watch` — bucle que ejecuta `sync-pull` + normalización cada 45 s (configurable).
 - `npm run normalize` — completa y mueve tickets `needs_formatting` a `backlog` con el formato exigido.
-- `npm run sanity` — audita coherencia de tickets (IDs, estados, dependencias, ciclos, duplicados y reglas client→provider) y escribe `.agents/tickets/.sanity-check.json`; se ejecuta automáticamente antes de `npm run sync`.
+- `npm run sanity` — audita coherencia de tickets (IDs, estados, dependencias, ciclos, duplicados y reglas client→provider); con `--write` escribe `.agents/tickets/.sanity-check.json`. Se ejecuta automáticamente antes de `npm run sync`.
 - `npm run complete -- TICK-014 [PR]` — cierra la entrega: marca `status: "done"`, registra el PR en `## Entrega`, mueve el ticket a `.agents/tickets/done/` y cierra el issue de GitHub si existe.
 - `npm run hotfix -- --title "..." --domain <sidecar> --module <módulo> --spec-impact none` — crea un ticket de emergencia, prepara la rama `fix/TICK-XXX-slug` en el sidecar y sugiere el commit `fix(<módulo>): ...`. Con `--publish` crea el issue vía `gh`.
 
@@ -90,7 +94,7 @@ El comando `/complete` cierra un ticket tras la entrega: actualiza el frontmatte
 
 ### 4. Ticket → especificación (SDD nativo en `.brain/`)
 
-Cada repositorio conserva sus especificaciones y su estado de ejecución en `.brain/`:
+Cada repositorio conserva sus especificaciones y su estado de ejecución en `.brain/`. La memoria (`memory/`) es central del workspace y no se duplica por sidecar:
 
 ```text
 <repo>/.brain/
@@ -102,6 +106,10 @@ Cada repositorio conserva sus especificaciones y su estado de ejecución en `.br
     ├── tasks.md             ← tareas atómicas
     ├── contract.md          ← solo si cruza sidecars
     └── analysis.md          ← reporte de spec drift
+
+<workspace>/.brain/
+├── config.json              ← preferencias (language)
+└── memory/                  ← constitución central
 ```
 
 Flujo:
@@ -185,7 +193,7 @@ Opciones: `--root <dir>`, `--repo <id>`, `--ticket <TICK-XXX>`, `--json`.
 - `~/.brain/config.json` con `{ "enterpriseLicense": "<payload>.<firma>" }`.
 - Clave pública Ed25519 en `BRAIN_LICENSE_PUBLIC_KEY`, `BRAIN_LICENSE_PUBLIC_KEY_FILE` o `~/.brain/license-public.pem`.
 
-El token es `base64url(payload).base64url(firma)` firmado con Ed25519. El payload incluye `plan: "enterprise"` (o `features: ["audit:*"]`) y `exp` en segundos. La validación es 100% local: no hay llamadas de red ni secretos embebidos. Sin licencia válida, `brain audit ...` se bloquea y muestra instrucciones de activación.
+El token es `base64url(payload).base64url(firma)` firmado con Ed25519. El payload incluye `plan: "enterprise"` (o `features: ["audit:*"]`) y `exp` en segundos. La validación es 100% local: no hay llamadas de red ni claves privadas embebidas. Sin licencia válida, `brain audit ...` se bloquea y muestra instrucciones de activación.
 
 Si trabajas desde el código fuente, compila antes de usar las auditorías:
 
@@ -200,7 +208,7 @@ npm run build   # genera dist/ (incluido en el paquete publicado)
 - **`config/system-map.json`** — topología activa: rutas, roles (`provider`/`client`/`standalone`), stacks, dominios, endpoints, esquemas y relaciones entre sidecars. El template base es neutro (sin sidecars); se puebla con `brain setup`. Es la fuente de verdad estructural.
 - **`config/system-map.example.json`** — mapa poblado de referencia con sidecars provider/client/standalone. Cópialo sobre `system-map.json` si quieres partir de una topología de ejemplo.
 - **`.brain/`** — en cada repositorio: `active.json`, `templates/` y `features/<TICK-XXX>/` (`spec.md`, `plan.md`, `tasks.md`, `contract.md`, `analysis.md`). Es la fuente de verdad del SDD.
-- **`templates/brain/`** — plantillas EARS que el motor copia a `<repo>/.brain/templates/` en `init-work`.
+- **`templates/brain/`** — plantillas EARS que el motor copia a `<repo>/.brain/templates/` en `init-work`. Contiene `en/` (inglés, por defecto), `es/` (español) y `memory/` (constitución central en inglés).
 - **`.brain/memory/constitution.md`** — constitución centralizada del ecosistema. `brain init` y `brain setup` la despliegan en el workspace si no existe (nunca sobrescriben una personalizada). `constitution-template.json` expone las mismas reglas en formato máquina.
 - **`.agents/prompts/`** — comportamiento del analista (rol, protocolo, formato de tickets).
 - **`.agents/skills/`** — skills base aprovisionadas (`brain-corp`, `sdd-brain`, `ticket-ops`).
