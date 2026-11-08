@@ -32,3 +32,7 @@ out/
 .opencode/package.json
 .opencode/package-lock.json
 .opencode/bun.lock
+
+# Claves de firma de licencias (nunca versionar)
+license-keys/
+brain-license-*.pem
