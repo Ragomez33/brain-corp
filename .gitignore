@@ -27,11 +27,9 @@ out/
 *.sqlite
 *.sqlite3
 
-# Dependencias locales de opencode
-.opencode/node_modules/
-.opencode/package.json
-.opencode/package-lock.json
-.opencode/bun.lock
+# Agentes locales generados por el CLI (fuente canónica: templates/agents/)
+.agents/
+.opencode/
 
 # Claves de firma de licencias (nunca versionar)
 license-keys/

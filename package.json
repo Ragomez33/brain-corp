@@ -1,7 +1,7 @@
 {
   "name": "@rgkoko/brain-corp",
-  "version": "1.1.1",
-  "description": "CLI de orquestación de ecosistemas multi-repositorio: topología de sidecars, tickets y sincronización con GitHub Issues.",
+  "version": "1.1.2",
+  "description": "Orchestration CLI for multi-repository ecosystems: sidecar topology, native SDD specifications, tickets and GitHub Issues synchronization.",
   "license": "MIT",
   "author": "Ragomez33",
   "homepage": "https://github.com/Ragomez33/brain-corp#readme",
@@ -33,11 +33,9 @@
     "bin",
     "scripts",
     "dist",
-    "config",
     "templates",
     "LICENSE",
-    "README.md",
-    "constitution.md"
+    "README.md"
   ],
   "scripts": {
     "brain": "node bin/brain.js",
@@ -49,6 +47,7 @@
     "init-brain": "node scripts/init-brain.js",
     "agents:sync": "node scripts/sync-agents.js",
     "reset": "node scripts/reset.js",
+    "pr": "node scripts/create-pr.js",
     "sdd": "node scripts/sdd.js",
     "init-work": "node scripts/sdd.js init-work",
     "specify": "node scripts/sdd.js specify",
