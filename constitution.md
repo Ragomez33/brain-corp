@@ -54,7 +54,7 @@
 3. Before creating a branch, verify state against the base branch (`git fetch origin`, `git log`/`git diff` against `origin/main` or the agreed base), according to the sidecar constitution.
 4. Commits follow Conventional Commits: `feat(<module>): ...`, `fix(<module>): ...`, `docs(spec): ...`, `refactor(<module>): ...`.
 5. The agent **never** runs `git commit`, `git push`, `git merge` or opens a PR autonomously. It proposes the command and requests explicit authorization.
-6. Every PR uses `.github/PULL_REQUEST_TEMPLATE.md` and declares: ticket/issue, summary, risks, rollback, spec impact, executed validations and quality checklist.
+6. Every PR must declare: ticket/issue, summary, risks, rollback, spec impact, executed validations and quality checklist.
 
 ## Article 7 — Multi-repository ecosystem integrity
 

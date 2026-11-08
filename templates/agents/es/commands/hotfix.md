@@ -64,7 +64,7 @@ Después de crear el ticket, ejecuta `node scripts/sanity-check.js --write` y co
 1. Implementa el cambio mínimo en el sidecar correspondiente.
 2. Ejecuta los quality gates del sidecar (typecheck/build/tests).
 3. Propón el commit exacto `fix(<módulo>): <título>` y solicita autorización. No lo ejecutes por tu cuenta.
-4. Prepara el PR con `.github/PULL_REQUEST_TEMPLATE.md`, incluyendo `Closes #<issue>`, riesgos, rollback y `Spec impact`.
+4. Prepara el PR con `brain pr TICK-XXX`, incluyendo `Closes #<issue>`, riesgos, rollback y `Spec impact`.
 5. Tras el merge, ejecuta `/complete TICK-XXX <PR>` o deja que `sync:pull` mueva el ticket a `done/` cuando el issue se cierre.
 
 ## Paso 5 — Reportar

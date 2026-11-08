@@ -254,5 +254,4 @@ npm run build   # generates dist/ (included in the published package)
 ## Governance and quick flow
 
 - **`constitution.md`** — repository governance rules: zero local tokens, root/sidecar separation, sanity-check, traceability, SDD and PR rules. It is part of the source repository, not the npm package.
-- **`.github/PULL_REQUEST_TEMPLATE.md`** — pull request template for the brain-corp repository itself. `brain pr` uses the bundled templates in `templates/pr/<lang>/` for user sidecars.
 - **`/hotfix`** — emergency flow: creates the ticket, prepares the `fix/TICK-XXX-slug` branch, requires declaring spec impact and suggests the `fix(<module>): ...` commit without skipping traceability.
