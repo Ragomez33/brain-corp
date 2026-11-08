@@ -59,7 +59,7 @@ function resolveLanguage(rootDir = process.cwd()) {
 function setLanguage(rootDir, language) {
   const normalized = normalizeLanguage(language)
   if (!normalized) {
-    throw new Error(`Idioma inválido: ${language}. Usa en o es.`)
+    throw new Error(`Invalid language: ${language}. Use en or es.`)
   }
 
   writeProjectConfig(rootDir, { language: normalized })

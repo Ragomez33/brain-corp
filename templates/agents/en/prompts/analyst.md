@@ -110,18 +110,18 @@ Frontmatter rules:
 After the frontmatter, the body must contain exactly these three level-2 sections, in this order. These headers are fixed canonical literals and must not be translated, because the sanity check validates them:
 
 ```markdown
-## Contexto / Hallazgo
+## Context / Finding
 
 Description of the current state and the detected gap, with verifiable evidence
 (files, models, resolvers, services, routes). Explain why it is a problem.
 
-## Requerimientos Técnicos
+## Technical Requirements
 
 Concrete, verifiable requirements to close the gap: data contracts,
 queries/mutations, schema changes, adapters, validations, migrations,
 error handling and acceptance criteria.
 
-## Impacto en la Arquitectura
+## Architecture Impact
 
 Affected repositories, domains and layers; cross-module dependencies; compatibility
 risks; data, multi-tenancy and synchronization implications; possible additional

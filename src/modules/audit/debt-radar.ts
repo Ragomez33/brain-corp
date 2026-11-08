@@ -65,7 +65,7 @@ function analyzeRepository(root: string, repository: RepositoryEntry): AuditFind
         repo: repository.id,
         file: toRelative(root, file),
         line: markerLines[0],
-        message: `${markerLines.length} marcador(es) técnico(s) pendientes (${[
+        message: `${markerLines.length} pending technical marker(s) (${[
           ...new Set(
             markerLines
               .map(lineNumber => lines[lineNumber - 1].match(MARKERS)?.[1]?.toUpperCase())
@@ -74,8 +74,8 @@ function analyzeRepository(root: string, repository: RepositoryEntry): AuditFind
         ].join(', ') || 'TODO'}).`,
         detail:
           ageDays === null
-            ? 'Sin historial git disponible para estimar antigüedad.'
-            : `Antigüedad del último cambio: ${ageDays} día(s).`
+            ? 'No git history available to estimate age.'
+            : `Age of last change: ${ageDays} day(s).`
       })
     }
 
@@ -85,8 +85,8 @@ function analyzeRepository(root: string, repository: RepositoryEntry): AuditFind
         repo: repository.id,
         file: toRelative(root, file),
         line: anyLines[0],
-        message: `${anyLines.length} uso(s) de "any" sin justificar.`,
-        detail: 'Tipado débil detectado; revisa si existe una alternativa tipada.'
+        message: `${anyLines.length} unjustified "any" usage(s).`,
+        detail: 'Weak typing detected; check whether a typed alternative exists.'
       })
     }
   }
@@ -113,8 +113,8 @@ function crossSidecarFriction(root: string, map: ReturnType<typeof loadSystemMap
       findings.push({
         severity: 'medium',
         repo: relationship.from,
-        message: `Integración "${relationship.from} → ${relationship.to}" sin contract.md registrado en ninguno de los dos repositorios.`,
-        detail: `Tipo de relación: ${relationship.type || 'desconocido'}.`
+        message: `Integration "${relationship.from} → ${relationship.to}" has no contract.md registered in either repository.`,
+        detail: `Relationship type: ${relationship.type || 'unknown'}.`
       })
     }
   }
@@ -151,8 +151,8 @@ export function run(options: AuditOptions = {}): AuditReport {
     generatedAt: new Date().toISOString(),
     summary:
       result.length === 0
-        ? 'No se detectó deuda técnica relevante.'
-        : `${result.length} hallazgo(s) de deuda técnica${high > 0 ? `, ${high} de severidad alta` : ''}.`,
+        ? 'No relevant technical debt detected.'
+        : `${result.length} technical debt finding(s)${high > 0 ? `, ${high} high severity` : ''}.`,
     findings: result,
     metrics: {
       repositories: targets.length,

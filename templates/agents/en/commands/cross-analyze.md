@@ -40,7 +40,7 @@ Run this protocol in order. **Root Orchestrator Mode:** always work from the bra
    ---
    ```
 
-   The body must contain the three mandatory sections, in order: `## Contexto / Hallazgo`, `## Requerimientos Técnicos` and `## Impacto en la Arquitectura` (fixed canonical literals). Follow the writing rules: verifiable evidence, concise technical English, no complete product code.
+   The body must contain the three mandatory sections, in order: `## Context / Finding`, `## Technical Requirements` and `## Architecture Impact` (fixed canonical literals). Follow the writing rules: verifiable evidence, concise technical English, no complete product code.
 
 6. **Report.** Return a brief summary with: created ticket path, ID, title, `target_domain` and the main finding in 1–2 sentences. If the analysis produced several coherent problems, create separate tickets and declare their `dependencies`.
 

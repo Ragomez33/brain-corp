@@ -18,6 +18,7 @@ const MESSAGES = {
     'bin.cmd.setup': 'Register sidecars and ecosystem topology.',
     'bin.cmd.agentsSync': 'Redeploy agent assets and commands.',
     'bin.cmd.reset': 'Clear the active feature state of a repository.',
+    'bin.cmd.pr': 'Create a pull request from a ticket using the bundled template.',
     'bin.cmd.audit': 'Enterprise audits (license required).',
     'bin.cmd.initWork': 'Initialize an SDD feature in .brain/.',
     'bin.cmd.specify': 'Generate spec.md (EARS).',
@@ -148,7 +149,6 @@ License activation:
     'audit.noFindings': 'No findings.',
     'audit.missingValue': 'Missing value for {option}',
     'audit.unknownOption': 'Unknown option: {option}',
-    'audit.licenseReason': 'Reason: {reason}',
 
     'hotfix.missingValue': 'Missing value for {option}',
     'hotfix.unknownArg': 'Unrecognized argument: {arg}',
@@ -172,6 +172,61 @@ License activation:
     'hotfix.issueCreated': '[hotfix] Issue #{issue} created.',
     'hotfix.branchError': '[hotfix] Error creating branch: {error}',
     'hotfix.publishError': '[hotfix] Error publishing issue: {error}',
+
+    'ticket.hotfix.impactNone': 'none (no governing spec affected).',
+    'ticket.hotfix.defaultContext': 'Emergency fix outside the full SDD flow. Scope must remain minimal and verifiable.',
+    'ticket.hotfix.emergencyTitle': 'Emergency hotfix: {title}.',
+    'ticket.hotfix.impactDeclared': 'Declared spec impact: {impact}',
+    'ticket.hotfix.requirementCommit': '- Record the change with commit `fix({module}): {title}`.',
+    'ticket.hotfix.requirementBranch': '- Work on branch `{branch}` of repository `{repo}`.',
+    'ticket.hotfix.requirementQuality': '- Validate the change with the sidecar quality gates (typecheck/build/tests).',
+    'ticket.hotfix.requirementImpact': '- Spec impact: {impact}',
+    'ticket.hotfix.requirementAmend': '- If the change alters an existing spec, include the amendment in the same PR.',
+    'ticket.hotfix.architectureDomain': '- Domain: `{domain}`.',
+    'ticket.hotfix.architectureRepo': '- Repository: `{repo}`.',
+    'ticket.hotfix.architectureBranch': '- Branch: `{branch}`.',
+    'ticket.hotfix.architectureScope': '- Scope limited to the hotfix; any extension requires an additional ticket.',
+    'ticket.normalize.noDescription': '(No description provided in the issue.)',
+    'ticket.normalize.autoNote': '> _Ticket automatically normalized by brain-corp. Pending refinement by the Analyst Architect._',
+    'ticket.normalize.reqAnalysis': '- Complete the functional analysis of the requirement described in the context.',
+    'ticket.normalize.reqContracts': '- Define the data contracts, endpoints, queries or mutations affected in `{domain}`.',
+    'ticket.normalize.reqValidations': '- Specify validations, error handling and verifiable acceptance criteria.',
+    'ticket.normalize.reqMigrations': '- Identify migrations, compatibility and existing data that must be preserved.',
+    'ticket.normalize.archRepo': '- Target repository: `{domain}`.',
+    'ticket.normalize.archLayers': '- Affected layers: {layers}',
+    'ticket.normalize.archDependencies': '- Review dependencies with other sidecars and the impact on isolation, data and synchronization.',
+
+    'pr.help': `brain-corp pr
+
+Usage:
+  brain pr <TICK-XXX> [options]
+
+Options:
+  --ticket <id>        Ticket ID (also accepted as the first positional argument).
+  --repo <id>          Base repository (required when target_domain is "shared").
+  --base <branch>      Base branch (default: main).
+  --title <title>      PR title (default: "<TICK>: <ticket title>").
+  --summary <text>     Summary inserted in the PR template.
+  --spec-impact <text> Spec impact section (default: none).
+  --body-file <file>   Use a custom PR body instead of the bundled template.
+  --lang <en|es>       Template language (default: workspace language).
+  --draft              Create the PR as a draft.
+  --dry-run            Print the rendered body and gh command without creating the PR.
+  --json               Print the result as JSON.
+  --help               Show this help.
+
+The command does not run commit or push. The branch must already exist on the remote.`,
+    'pr.missingValue': 'Missing value for {option}',
+    'pr.unknownOption': 'Unknown option: {option}',
+    'pr.ticketRequired': 'A ticket is required. Usage: brain pr TICK-XXX.',
+    'pr.ticketNotFound': 'Ticket {ticket} was not found in .agents/tickets/.',
+    'pr.ticketAmbiguous': 'Ticket {ticket} is ambiguous; it matches several files.',
+    'pr.repoRequired': 'No repository registered for domain "{domain}". Use --repo <id>.',
+    'pr.templateMissing': 'Missing PR template: {file}',
+    'pr.bodyFileMissing': 'Body file not found: {file}',
+    'pr.dryRun': '[pr] Dry run: {title} ({repo} -> {base})',
+    'pr.created': '[pr] Pull request created: {url}',
+    'pr.createFailed': 'Could not create the pull request: {error}',
 
     'complete.missingValue': 'Missing value for {option}',
     'complete.unknownArg': 'Unrecognized argument: {arg}',
@@ -374,13 +429,6 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'agents.engine': '[sync-agents] Engine: {agent} · workspace: {root}',
     'agents.summary': '[sync-agents] {created} new file(s), {skipped} already existing.',
 
-    'auth.helpTitle': 'brain-corp · Enterprise audits',
-    'auth.helpBody': 'This capability requires an active Enterprise license.',
-    'auth.activate': 'Activate your token in one of these ways:',
-    'auth.envOption': '1) Environment variable (recommended in CI):',
-    'auth.configOption': '2) Local configuration file:',
-    'auth.validation': 'Validation is local with an Ed25519 signature. Provide the public key with BRAIN_LICENSE_PUBLIC_KEY, BRAIN_LICENSE_PUBLIC_KEY_FILE or ~/.brain/license-public.pem.',
-    'auth.request': 'Request your token from your organization administrator.'
   },
   es: {
     'language.prompt': 'Select your preferred language / Selecciona tu idioma',
@@ -399,6 +447,7 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'bin.cmd.setup': 'Registrar sidecars y topología del ecosistema.',
     'bin.cmd.agentsSync': 'Re-desplegar assets y comandos del motor de agente.',
     'bin.cmd.reset': 'Vaciar el estado activo de un repositorio.',
+    'bin.cmd.pr': 'Crear un pull request desde un ticket con la plantilla incluida.',
     'bin.cmd.audit': 'Auditorías Enterprise (requiere licencia).',
     'bin.cmd.initWork': 'Inicializar una feature SDD en .brain/.',
     'bin.cmd.specify': 'Generar spec.md (EARS).',
@@ -529,7 +578,6 @@ Activación de licencia:
     'audit.noFindings': 'Sin hallazgos.',
     'audit.missingValue': 'Falta el valor para {option}',
     'audit.unknownOption': 'Opción desconocida: {option}',
-    'audit.licenseReason': 'Motivo: {reason}',
 
     'hotfix.missingValue': 'Falta el valor para {option}',
     'hotfix.unknownArg': 'Argumento no reconocido: {arg}',
@@ -553,6 +601,61 @@ Activación de licencia:
     'hotfix.issueCreated': '[hotfix] Issue #{issue} creado.',
     'hotfix.branchError': '[hotfix] Error al crear la rama: {error}',
     'hotfix.publishError': '[hotfix] Error al publicar el issue: {error}',
+
+    'ticket.hotfix.impactNone': 'none (sin spec gobernante afectada).',
+    'ticket.hotfix.defaultContext': 'Corrección urgente fuera del flujo SDD completo. El alcance debe mantenerse mínimo y verificable.',
+    'ticket.hotfix.emergencyTitle': 'Hotfix de emergencia: {title}.',
+    'ticket.hotfix.impactDeclared': 'Impacto declarado en especificaciones: {impact}',
+    'ticket.hotfix.requirementCommit': '- Registrar el cambio con commit `fix({module}): {title}`.',
+    'ticket.hotfix.requirementBranch': '- Trabajar en la rama `{branch}` del repositorio `{repo}`.',
+    'ticket.hotfix.requirementQuality': '- Validar el cambio con los quality gates del sidecar (typecheck/build/tests).',
+    'ticket.hotfix.requirementImpact': '- Impacto en especificaciones: {impact}',
+    'ticket.hotfix.requirementAmend': '- Si el cambio altera una spec existente, incluir la enmienda en el mismo PR.',
+    'ticket.hotfix.architectureDomain': '- Dominio: `{domain}`.',
+    'ticket.hotfix.architectureRepo': '- Repositorio: `{repo}`.',
+    'ticket.hotfix.architectureBranch': '- Rama: `{branch}`.',
+    'ticket.hotfix.architectureScope': '- Alcance limitado al hotfix; cualquier extensión requiere ticket adicional.',
+    'ticket.normalize.noDescription': '(Sin descripción proporcionada en el issue.)',
+    'ticket.normalize.autoNote': '> _Ticket normalizado automáticamente por brain-corp. Pendiente de refinamiento por el Arquitecto Analista._',
+    'ticket.normalize.reqAnalysis': '- Completar el análisis funcional del requerimiento descrito en el contexto.',
+    'ticket.normalize.reqContracts': '- Definir los contratos de datos, endpoints, queries o mutaciones afectados en `{domain}`.',
+    'ticket.normalize.reqValidations': '- Especificar validaciones, manejo de errores y criterios de aceptación verificables.',
+    'ticket.normalize.reqMigrations': '- Identificar migraciones, compatibilidad y datos existentes que deban preservarse.',
+    'ticket.normalize.archRepo': '- Repositorio objetivo: `{domain}`.',
+    'ticket.normalize.archLayers': '- Capas afectadas: {layers}',
+    'ticket.normalize.archDependencies': '- Revisar dependencias con otros sidecars y el impacto en aislamiento, datos y sincronización.',
+
+    'pr.help': `brain-corp pr
+
+Uso:
+  brain pr <TICK-XXX> [opciones]
+
+Opciones:
+  --ticket <id>        ID del ticket (también se acepta como primer argumento).
+  --repo <id>          Repositorio base (obligatorio si target_domain es "shared").
+  --base <branch>      Rama base (por defecto: main).
+  --title <title>      Título del PR (por defecto: "<TICK>: <título del ticket>").
+  --summary <text>     Resumen insertado en la plantilla del PR.
+  --spec-impact <text> Sección de impacto en specs (por defecto: none).
+  --body-file <file>   Usa un cuerpo de PR personalizado en vez de la plantilla.
+  --lang <en|es>       Idioma de la plantilla (por defecto: idioma del workspace).
+  --draft              Crea el PR como borrador.
+  --dry-run            Imprime el cuerpo renderizado y el comando gh sin crear el PR.
+  --json               Imprime el resultado en JSON.
+  --help               Muestra esta ayuda.
+
+El comando no ejecuta commit ni push. La rama debe existir ya en el remoto.`,
+    'pr.missingValue': 'Falta el valor para {option}',
+    'pr.unknownOption': 'Opción desconocida: {option}',
+    'pr.ticketRequired': 'Falta el ticket. Uso: brain pr TICK-XXX.',
+    'pr.ticketNotFound': 'No se encontró el ticket {ticket} en .agents/tickets/.',
+    'pr.ticketAmbiguous': 'El ticket {ticket} es ambiguo; coincide con varios archivos.',
+    'pr.repoRequired': 'No hay repositorio registrado para el dominio "{domain}". Usa --repo <id>.',
+    'pr.templateMissing': 'Falta la plantilla de PR: {file}',
+    'pr.bodyFileMissing': 'No existe el archivo de cuerpo: {file}',
+    'pr.dryRun': '[pr] Dry run: {title} ({repo} -> {base})',
+    'pr.created': '[pr] Pull request creado: {url}',
+    'pr.createFailed': 'No se pudo crear el pull request: {error}',
 
     'complete.missingValue': 'Falta el valor para {option}',
     'complete.unknownArg': 'Argumento no reconocido: {arg}',
@@ -755,13 +858,6 @@ Re-despliega prompts, skills, plantillas SDD, constitución central y comandos d
     'agents.engine': '[sync-agents] Motor: {agent} · workspace: {root}',
     'agents.summary': '[sync-agents] {created} archivo(s) nuevos, {skipped} ya existentes.',
 
-    'auth.helpTitle': 'brain-corp · Auditorías Enterprise',
-    'auth.helpBody': 'Esta capacidad requiere una licencia Enterprise activa.',
-    'auth.activate': 'Activa tu token de una de estas formas:',
-    'auth.envOption': '1) Variable de entorno (recomendado en CI):',
-    'auth.configOption': '2) Archivo local de configuración:',
-    'auth.validation': 'La validación es local con firma Ed25519. Puedes indicar la clave pública con BRAIN_LICENSE_PUBLIC_KEY, BRAIN_LICENSE_PUBLIC_KEY_FILE o en ~/.brain/license-public.pem.',
-    'auth.request': 'Solicita tu token al administrador de tu organización.'
   }
 }
 

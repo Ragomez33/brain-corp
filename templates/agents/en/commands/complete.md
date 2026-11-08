@@ -34,7 +34,7 @@ The script performs, in order:
 
 1. Locates the ticket in any state folder (`.agents/tickets/backlog|in-analysis|ready|done`).
 2. Sets `status` to `"done"` in the frontmatter.
-3. Adds or updates the `## Entrega` section with the PR reference (if provided) and completion date.
+3. Adds or updates the `## Delivery` section with the PR reference (if provided) and completion date.
 4. Moves the file to `.agents/tickets/done/`.
 5. If the ticket has `github_issue`, runs `gh issue close <number> --reason completed` and, when a PR exists, adds a comment with the reference.
 
@@ -53,5 +53,5 @@ Confirm that:
 
 - The file is in `.agents/tickets/done/`.
 - The frontmatter contains `status: "done"`.
-- The body contains the `## Entrega` section with `- PR:` (if provided) and `- Completado:`.
+- The body contains the `## Delivery` section with `- PR:` (if provided) and `- Completed:`.
 - The GitHub issue was closed or the omission was explained.

@@ -66,10 +66,10 @@ function analyzeRepository(
       severity: crossSidecar ? 'high' : 'medium',
       repo: repository.id,
       file: toRelative(root, path.join(repoDir, currentFile)),
-      message: `Posible breaking change en contrato: ${line.replace(/^-\s*/, '').slice(0, 120)}`,
+      message: `Possible contract breaking change: ${line.replace(/^-\s*/, '').slice(0, 120)}`,
       detail: crossSidecar
-        ? 'El repositorio participa en una relación del system-map: un cambio incompatible puede romper consumidores.'
-        : 'Verifica compatibilidad retroactiva antes de publicar.'
+        ? 'The repository participates in a system-map relationship: an incompatible change may break consumers.'
+        : 'Verify backward compatibility before publishing.'
     })
   }
 
@@ -99,8 +99,8 @@ function missingContracts(
       findings.push({
         severity: 'low',
         repo: relationship.from,
-        message: `Relación "${relationship.from} → ${relationship.to}" sin contract.md que respalde el cambio.`,
-        detail: `Tipo: ${relationship.type || 'desconocido'}.`
+        message: `Relationship "${relationship.from} → ${relationship.to}" has no contract.md backing the change.`,
+        detail: `Type: ${relationship.type || 'unknown'}.`
       })
     }
   }
@@ -137,8 +137,8 @@ export function run(options: AuditOptions = {}): AuditReport {
     generatedAt: new Date().toISOString(),
     summary:
       findings.length === 0
-        ? 'No se detectaron breaking changes en contratos ni relaciones sin contrato.'
-        : `${findings.length} hallazgo(s) de contrato${high > 0 ? `, ${high} bloqueante(s)` : ''}.`,
+        ? 'No contract breaking changes or unbacked relationships detected.'
+        : `${findings.length} contract finding(s)${high > 0 ? `, ${high} blocking` : ''}.`,
     findings,
     metrics: {
       repositories: targets.length,

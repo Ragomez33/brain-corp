@@ -183,7 +183,7 @@ function promptSelection(
         if (!multiple) return finish(choices[cursor])
 
         // Enter confirma todos los elementos marcados con espacio, en orden
-        // de la lista. El cursor por sí solo no se añade a la selección.
+        // of the list. The cursor alone is not added to the selection.
         const values = [...selected]
           .sort((a, b) => a - b)
           .map(index => choices[index])

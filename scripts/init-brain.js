@@ -446,7 +446,7 @@ function launchAgent(config) {
       try {
         if (child.exitCode === null && !child.killed) child.kill(signal)
       } catch {
-        // El proceso ya terminó.
+        // The process already exited.
       }
 
       process.exit(code)

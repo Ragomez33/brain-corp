@@ -12,9 +12,32 @@ const {
   inferIssueNumber
 } = require('./lib/tickets')
 const { getRegisteredRepositories, readSystemMap } = require('./lib/system-map')
+const { getDeliveryConfig, loadAllPacks } = require('./lib/validation')
 const { t } = require('./lib/i18n')
 
-const DELIVERY_SECTION = '## Entrega'
+function deliveryHeaders() {
+  return [...new Set(loadAllPacks().map(pack => pack.ticketSections.delivery))]
+}
+
+function deliveryFieldsFor(section) {
+  const pack = loadAllPacks().find(item => item.ticketSections.delivery === section)
+  return pack ? pack.deliveryFields : getDeliveryConfig().fields
+}
+
+function detectTicketLanguage(content) {
+  const text = String(content || '')
+  for (const pack of loadAllPacks()) {
+    const sections = pack.ticketSections
+    if (
+      text.includes(sections.context) &&
+      text.includes(sections.requirements) &&
+      text.includes(sections.architecture)
+    ) {
+      return pack.language
+    }
+  }
+  return null
+}
 
 function fail(message) {
   console.error(`[complete-ticket] ${message}`)
@@ -127,22 +150,32 @@ function clearActiveForTicket(ticket, ticketId) {
   return null
 }
 
-function buildDeliverySection({ prRef, completedAt }) {
-  const lines = [DELIVERY_SECTION, '']
-  if (prRef) lines.push(`- PR: ${prRef}`)
-  lines.push(`- Completado: ${completedAt}`)
+function buildDeliverySection({ section, fields, prRef, completedAt }) {
+  const lines = [section, '']
+  if (prRef) lines.push(`${fields.pr} ${prRef}`)
+  lines.push(`${fields.completed} ${completedAt}`)
   return lines.join('\n')
 }
 
 function updateDeliverySection(content, { prRef, completedAt }) {
   const normalized = String(content || '').trim()
   const lines = normalized ? normalized.split(/\r?\n/) : []
-  const headerIndex = lines.findIndex(line => line.trim() === DELIVERY_SECTION)
+  const headers = deliveryHeaders()
+  const headerIndex = lines.findIndex(line => headers.includes(line.trim()))
 
   if (headerIndex === -1) {
-    const section = buildDeliverySection({ prRef, completedAt })
+    const active = getDeliveryConfig(detectTicketLanguage(content))
+    const section = buildDeliverySection({
+      section: active.section,
+      fields: active.fields,
+      prRef,
+      completedAt
+    })
     return `${normalized ? `${normalized}\n\n` : ''}${section}\n`
   }
+
+  const section = lines[headerIndex].trim()
+  const fields = deliveryFieldsFor(section)
 
   let endIndex = lines.findIndex(
     (line, index) => index > headerIndex && /^##\s+/.test(line.trim())
@@ -156,9 +189,14 @@ function updateDeliverySection(content, { prRef, completedAt }) {
 
   const before = lines.slice(0, headerIndex)
   const after = lines.slice(endIndex)
-  const section = buildDeliverySection({ prRef: effectivePr, completedAt }).split('\n')
+  const nextSection = buildDeliverySection({
+    section,
+    fields,
+    prRef: effectivePr,
+    completedAt
+  }).split('\n')
 
-  const combined = [...before, ...section]
+  const combined = [...before, ...nextSection]
 
   if (after.length > 0) {
     combined.push('')

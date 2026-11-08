@@ -20,10 +20,10 @@ function featurePath(ctx, key) {
 function ensureFeatureDir(ctx) {
   if (!fs.existsSync(ctx.featureDir)) {
     throw new Error(
-      `La feature ${ctx.ticketId} no existe en ${path.relative(
+      `Feature ${ctx.ticketId} does not exist at ${path.relative(
         ctx.rootDir,
         ctx.featureDir
-      )}. Ejecuta primero "brain init-work ${ctx.ticketId}".`
+      )}. Run "brain init-work ${ctx.ticketId}" first.`
     )
   }
 }
@@ -32,7 +32,7 @@ function ensureFile(ctx, key) {
   const file = featurePath(ctx, key)
   if (!fs.existsSync(file)) {
     throw new Error(
-      `Falta ${FEATURE_FILES[key]} en .brain/features/${ctx.ticketId}/. Ejecuta la fase anterior.`
+      `Missing ${FEATURE_FILES[key]} in .brain/features/${ctx.ticketId}/. Run the previous phase.`
     )
   }
   return file
@@ -180,7 +180,7 @@ function implement({ ticketId, repoId, mode = 'checkpoint', taskId = null }) {
     const target = tasksList.find(item => item.id === normalized)
 
     if (!target) {
-      throw new Error(`No existe la tarea ${normalized} en tasks.md.`)
+      throw new Error(`Task ${normalized} does not exist in tasks.md.`)
     }
 
     content = content
@@ -239,11 +239,11 @@ function analyze({ ticketId, repoId, write = true }) {
   const tasksFile = featurePath(ctx, 'tasks')
   const contractFile = featurePath(ctx, 'contract')
 
-  if (!fs.existsSync(specFile)) errors.push('Falta spec.md (ejecuta "brain specify").')
-  if (!fs.existsSync(planFile)) warnings.push('Falta plan.md (ejecuta "brain plan").')
-  if (!fs.existsSync(tasksFile)) warnings.push('Falta tasks.md (ejecuta "brain tasks").')
+  if (!fs.existsSync(specFile)) errors.push('Missing spec.md (run "brain specify").')
+  if (!fs.existsSync(planFile)) warnings.push('Missing plan.md (run "brain plan").')
+  if (!fs.existsSync(tasksFile)) warnings.push('Missing tasks.md (run "brain tasks").')
   if (ctx.contractRequired && !fs.existsSync(contractFile)) {
-    warnings.push('La feature cruza sidecars pero falta contract.md (ejecuta "brain init-work" con --force).')
+    warnings.push('The feature crosses sidecars but contract.md is missing (run "brain init-work" with --force).')
   }
 
   const spec = fs.existsSync(specFile) ? fs.readFileSync(specFile, 'utf8') : ''
@@ -256,17 +256,17 @@ function analyze({ ticketId, repoId, write = true }) {
 
   for (const requirement of requirements) {
     if (!covered.has(requirement)) {
-      warnings.push(`El requisito ${requirement} no está referenciado en tasks.md.`)
+      warnings.push(`Requirement ${requirement} is not referenced in tasks.md.`)
     }
   }
 
   if (taskItems.length === 0) {
-    warnings.push('tasks.md no contiene tareas en el formato "- [ ] TXXX ...".')
+    warnings.push('tasks.md contains no tasks in the "- [ ] TXXX ..." format.')
   }
 
   const pending = taskItems.filter(item => !item.done)
   if (pending.length > 0) {
-    warnings.push(`Quedan ${pending.length} tarea(s) sin completar.`)
+    warnings.push(`${pending.length} pending task(s) remain.`)
   }
 
   const pathMatches = extractMatches(taskText, /`([^`]+\.(?:js|jsx|ts|tsx|prisma|sql|graphql|gql|json|md|py|go|rs))`/g)
@@ -278,7 +278,7 @@ function analyze({ ticketId, repoId, write = true }) {
 
     const absolute = path.resolve(ctx.repoDir, candidate)
     if (!fs.existsSync(absolute)) {
-      warnings.push(`La ruta referida en tasks.md no existe en el repositorio: ${candidate}`)
+      warnings.push(`Path referenced in tasks.md does not exist in the repository: ${candidate}`)
     }
   }
 
@@ -301,7 +301,7 @@ function analyze({ ticketId, repoId, write = true }) {
 
   if (write) {
     const lines = [
-      `# Análisis SDD: ${ctx.ticketId}`,
+      `# SDD Analysis: ${ctx.ticketId}`,
       '',
       `- **Generado**: ${report.generatedAt}`,
       `- **Repositorio**: ${report.repoId}`,

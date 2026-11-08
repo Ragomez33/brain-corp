@@ -80,12 +80,12 @@ function relatedRepositories(map, repository) {
 
 function resolveContext({ rootDir = process.cwd(), ticketId, repoId }) {
   if (!ticketId) {
-    throw new Error('Falta el ticket. Uso: <comando> TICK-XXX [--repo <id>].')
+    throw new Error('Missing ticket. Usage: <command> TICK-XXX [--repo <id>].')
   }
 
   const ticket = findTicket(rootDir, ticketId)
   if (!ticket) {
-    throw new Error(`No se encontró el ticket ${normalizeTicketId(ticketId)} en .agents/tickets/.`)
+    throw new Error(`Ticket ${normalizeTicketId(ticketId)} was not found in .agents/tickets/.`)
   }
 
   const map = readSystemMap(rootDir)
@@ -96,13 +96,13 @@ function resolveContext({ rootDir = process.cwd(), ticketId, repoId }) {
 
   if (!repository && targetDomain === 'shared') {
     throw new Error(
-      'El ticket es "shared": indica el repositorio base con --repo <id> para ubicar la feature.'
+      'The ticket is "shared": specify the base repository with --repo <id> to locate the feature.'
     )
   }
 
   if (!repository) {
     throw new Error(
-      `El target_domain "${targetDomain}" no corresponde a ningún repositorio registrado.`
+      `target_domain "${targetDomain}" does not match any registered repository.`
     )
   }
 

@@ -49,6 +49,7 @@ The old `speckit.*` flow is forbidden. External bash scripts and specification f
 3. No phase advances without the previous phase file (`specify → plan → tasks → implement`).
 4. Tasks are marked `[x]` only when implemented and verified.
 5. `/analyze` is mandatory before opening a feature PR.
+6. Canonical ticket body sections are `## Context / Finding`, `## Technical Requirements` and `## Architecture Impact`. The validator also accepts the legacy Spanish equivalents for backward compatibility.
 
 ## 4. Code constraints
 

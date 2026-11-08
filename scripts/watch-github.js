@@ -64,12 +64,12 @@ function printResult(result) {
 }
 
 function tick() {
-  log('Iniciando sync-pull...')
+  log('Starting sync-pull...')
 
   const pull = runScript(SYNC_PULL)
 
   if (pull.status !== 0) {
-    log(`sync-pull terminó con código ${pull.status}.`)
+    log(`sync-pull exited with code ${pull.status}.`)
     printResult(pull)
     return
   }
@@ -80,7 +80,7 @@ function tick() {
   const pendingResult = runScript(NORMALIZE, ['--json'])
 
   if (pendingResult.status !== 0) {
-    log('No se pudo consultar la lista de tickets pendientes.')
+    log('Could not query the pending ticket list.')
     printResult(pendingResult)
     return
   }
@@ -90,36 +90,36 @@ function tick() {
   try {
     pending = JSON.parse(pendingResult.stdout || '[]')
   } catch {
-    log('Salida JSON inválida al consultar tickets pendientes.')
+    log('Invalid JSON output while querying pending tickets.')
     return
   }
 
   if (pending.length === 0) {
-    log('Sin tickets pendientes de normalización.')
+    log('No tickets pending normalization.')
     return
   }
 
-  log(`Detectados ${pending.length} ticket(s) con "needs_formatting". Normalizando...`)
+  log(`Detected ${pending.length} ticket(s) with "needs_formatting". Normalizing...`)
 
   const normalizeResult = runScript(NORMALIZE, ['--auto'])
 
   printResult(normalizeResult)
 
   if (normalizeResult.status !== 0) {
-    log(`normalize-ticket terminó con código ${normalizeResult.status}.`)
+    log(`normalize-ticket exited with code ${normalizeResult.status}.`)
   } else {
-    log('Normalización completada.')
+    log('Normalization completed.')
   }
 }
 
 function scheduleNext() {
   if (args.once) {
-    log('Modo --once completado.')
+    log('--once mode completed.')
     if (logStream) logStream.end()
     return
   }
 
-  log(`Próximo ciclo en ${args.intervalSeconds}s.`)
+  log(`Next cycle in ${args.intervalSeconds}s.`)
   setTimeout(() => {
     tick()
     scheduleNext()
@@ -127,7 +127,7 @@ function scheduleNext() {
 }
 
 function shutdown(signal) {
-  log(`Recibida señal ${signal}; deteniendo watcher.`)
+  log(`Received signal ${signal}; stopping watcher.`)
   if (logStream) logStream.end()
   process.exit(0)
 }
@@ -135,6 +135,6 @@ function shutdown(signal) {
 process.on('SIGINT', () => shutdown('SIGINT'))
 process.on('SIGTERM', () => shutdown('SIGTERM'))
 
-log(`Watcher iniciado (intervalo ${args.intervalSeconds}s, raíz ${ROOT_DIR}).`)
+log(`Watcher started (interval ${args.intervalSeconds}s, root ${ROOT_DIR}).`)
 tick()
 scheduleNext()

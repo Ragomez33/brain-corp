@@ -39,57 +39,19 @@ export class LicenseError extends Error {
 
 const ENTERPRISE_PLANS = new Set(['enterprise', 'enterprise-plus', 'enterprise_plus'])
 
-type Lang = 'en' | 'es'
-
-const AUTH_MESSAGES: Record<Lang, Record<string, string>> = {
-  en: {
-    'missing-token': 'No active Enterprise license found in this environment.',
-    'missing-public-key': 'Missing public key to validate the Enterprise license.',
-    'invalid-format': 'The Enterprise token has an invalid format. Expected <payload>.<signature>.',
-    'invalid-payload': 'The Enterprise token payload is not valid JSON.',
-    'signature-error': 'Could not verify the token signature: {error}',
-    'invalid-signature': 'The Enterprise token signature is invalid.',
-    'expired': 'The Enterprise license expired on {date}.',
-    'invalid-plan': 'The token does not correspond to an Enterprise plan with audit access.'
-  },
-  es: {
-    'missing-token': 'No hay una licencia Enterprise activa en este entorno.',
-    'missing-public-key': 'Falta la clave pública para validar la licencia Enterprise.',
-    'invalid-format': 'El token Enterprise tiene un formato inválido. Debe ser <payload>.<firma>.',
-    'invalid-payload': 'El payload del token Enterprise no es JSON válido.',
-    'signature-error': 'No se pudo verificar la firma del token: {error}',
-    'invalid-signature': 'La firma del token Enterprise no es válida.',
-    'expired': 'La licencia Enterprise expiró el {date}.',
-    'invalid-plan': 'El token no corresponde a un plan Enterprise con acceso a auditorías.'
-  }
-}
-
-function readLanguageFrom(file: string): Lang | null {
-  try {
-    if (!fs.existsSync(file)) return null
-    const data = JSON.parse(fs.readFileSync(file, 'utf8')) as { language?: string }
-    return data.language === 'en' || data.language === 'es' ? data.language : null
-  } catch {
-    return null
-  }
-}
-
-export function resolveLanguage(): Lang {
-  const fromEnv = process.env.BRAIN_LANG
-  if (fromEnv === 'en' || fromEnv === 'es') return fromEnv
-
-  const project = readLanguageFrom(path.join(process.cwd(), '.brain', 'config.json'))
-  if (project) return project
-
-  const globalConfig = readLanguageFrom(path.join(os.homedir(), '.brain', 'config.json'))
-  if (globalConfig) return globalConfig
-
-  return 'en'
+const AUTH_MESSAGES: Record<string, string> = {
+  'missing-token': 'No active Enterprise license found in this environment.',
+  'missing-public-key': 'Missing public key to validate the Enterprise license.',
+  'invalid-format': 'The Enterprise token has an invalid format. Expected <payload>.<signature>.',
+  'invalid-payload': 'The Enterprise token payload is not valid JSON.',
+  'signature-error': 'Could not verify the token signature: {error}',
+  'invalid-signature': 'The Enterprise token signature is invalid.',
+  'expired': 'The Enterprise license expired on {date}.',
+  'invalid-plan': 'The token does not correspond to an Enterprise plan with audit access.'
 }
 
 function msg(key: string, params: Record<string, string> = {}): string {
-  const language = resolveLanguage()
-  const template = AUTH_MESSAGES[language][key] || AUTH_MESSAGES.en[key] || key
+  const template = AUTH_MESSAGES[key] || key
   return template.replace(/\{\{?\s*([A-Za-z0-9_.-]+)\s*\}?\}/g, (match, name) => {
     return Object.prototype.hasOwnProperty.call(params, name) ? params[name] : match
   })
@@ -284,36 +246,9 @@ export function requireEnterpriseLicense(): LicenseInfo {
   return verifyLicenseToken(resolved.token, publicKey, resolved.source)
 }
 
-export function licenseHelpMessage(language?: Lang): string {
-  const lang = language || resolveLanguage()
+export function licenseHelpMessage(): string {
   const config = configPath()
   const publicKeyPath = path.join(os.homedir(), '.brain', 'license-public.pem')
-
-  if (lang === 'es') {
-    return [
-      '╭──────────────────────────────────────────────────────────────╮',
-      '│  brain-corp · Auditorías Enterprise                          │',
-      '╰──────────────────────────────────────────────────────────────╯',
-      '',
-      'Esta capacidad requiere una licencia Enterprise activa.',
-      '',
-      'Activa tu token de una de estas formas:',
-      '',
-      '  1) Variable de entorno (recomendado en CI):',
-      '     export BRAIN_LICENSE_TOKEN="<payload>.<firma>"',
-      '',
-      '  2) Archivo local de configuración:',
-      `     ${config}`,
-      '     { "enterpriseLicense": "<payload>.<firma>" }',
-      '',
-      'La validación es local con firma Ed25519. Puedes indicar la clave',
-      'pública con BRAIN_LICENSE_PUBLIC_KEY, BRAIN_LICENSE_PUBLIC_KEY_FILE',
-      `o en ${publicKeyPath}.`,
-      '',
-      'Solicita tu token al administrador de tu organización.',
-      ''
-    ].join('\n')
-  }
 
   return [
     '╭──────────────────────────────────────────────────────────────╮',

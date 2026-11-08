@@ -3,7 +3,7 @@ const path = require('node:path')
 const matter = require('gray-matter')
 const { getRegisteredRepositories, readSystemMap } = require('./system-map')
 
-// La raíz del workspace es el cwd del usuario; los scripts viven en el paquete.
+// The workspace root is the user's cwd; scripts live in the package.
 const ROOT_DIR = process.cwd()
 const TICKETS_DIR = path.join(ROOT_DIR, '.agents', 'tickets')
 const STATUS_DIRS = ['backlog', 'in-analysis', 'ready', 'done']
@@ -144,7 +144,7 @@ function updateFrontmatter(raw, updates) {
   )
 
   if (closeIndex === -1) {
-    throw new Error('Frontmatter YAML sin cierre')
+    throw new Error('Unclosed YAML frontmatter')
   }
 
   for (const [key, value] of Object.entries(updates)) {

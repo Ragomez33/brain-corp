@@ -1,0 +1,55 @@
+{
+  "language": "en",
+  "ticketSections": {
+    "context": "## Context / Finding",
+    "requirements": "## Technical Requirements",
+    "architecture": "## Architecture Impact",
+    "delivery": "## Delivery"
+  },
+  "deliveryFields": {
+    "pr": "- PR:",
+    "completed": "- Completed:"
+  },
+  "apiRequirementPatterns": [
+    "\\b(missing|no)\\s+(the\\s+)?(mutation|query|endpoint|resolver|migration)\\b",
+    "\\b(add|create|expose|implement)\\s+(the\\s+)?(mutation|query|endpoint|resolver|migration)\\b",
+    "\\b(change|modify|update)\\b[^\\n]{0,80}\\b(schema|contract|graphql)\\b"
+  ],
+  "securityControls": [
+    {
+      "key": "auth",
+      "label": "authentication/authorization",
+      "keywords": ["auth", "authentication", "authorization", "permission", "role", "session", "jwt"],
+      "controls": ["auth", "authoriz", "permission", "rbac", "guard", "jwt", "session", "role"],
+      "severity": "high"
+    },
+    {
+      "key": "validation",
+      "label": "input validation",
+      "keywords": ["validation", "validate", "sanitize", "escape", "input"],
+      "controls": ["validat", "sanitiz", "escape", "zod", "joi", "yup", "class-validator", "schema"],
+      "severity": "high"
+    },
+    {
+      "key": "injection",
+      "label": "injection prevention",
+      "keywords": ["injection", "sql", "query", "parameterized"],
+      "controls": ["parameterized", "prepared", "placeholder", "prisma", "knex", "drizzle", "query builder", "escape"],
+      "severity": "critical"
+    },
+    {
+      "key": "secrets",
+      "label": "secret handling",
+      "keywords": ["secret", "token", "credential", "password"],
+      "controls": ["process.env", "config.", "vault", "secret manager", "env["],
+      "severity": "high"
+    },
+    {
+      "key": "rate-limit",
+      "label": "rate limiting",
+      "keywords": ["rate limit", "throttle", "abuse", "brute force"],
+      "controls": ["rate limit", "throttl", "limiter", "slowdown"],
+      "severity": "medium"
+    }
+  ]
+}

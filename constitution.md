@@ -1,96 +1,90 @@
-# Constitución de brain-corp
+# brain-corp Constitution
 
-**Ámbito:** orquestación del monorepo contenedor `brain-corp`, sus tickets, su sincronización con GitHub y sus flujos de entrega. Las reglas de código, datos y UI de cada producto viven en la constitución de su sidecar y prevalecen en ese dominio.
+**Scope:** orchestration of the `brain-corp` container monorepo, its tickets, its GitHub synchronization and its delivery flows. Code, data and UI rules for each product live in that sidecar's constitution and prevail in that domain.
 
-**Autoridad:** esta constitución gobierna la capa de metadatos y orquestación. En caso de conflicto, `sidecars/<repo>/constitution.md` (o el documento equivalente del sidecar) prevalece para la lógica de producto; esta constitución prevalece para tickets, sync, PRs y trazabilidad del ecosistema.
+**Authority:** this constitution governs the metadata and orchestration layer. In case of conflict, `sidecars/<repo>/constitution.md` (or the sidecar's equivalent document) prevails for product logic; this constitution prevails for tickets, sync, PRs and ecosystem traceability.
 
-**Vigencia:** desde 2026-10-30.
+## Article 1 — Zero local tokens
 
----
+1. GitHub authentication is delegated **exclusively** to the `gh` CLI and its secure credential store (`gh auth login`, system keyring).
+2. Storing tokens, PATs, client secrets, service role keys or GitHub credentials in `.brainrc.json`, scripts, tickets, documentation, `.env*`, logs or any versioned file is forbidden.
+3. brain-corp scripts use `gh` as the only GitHub interface. They must not implement custom HTTP clients with embedded tokens or read tokens from variables persisted to disk.
+4. If a script needs the target repository, it receives it as an argument or resolves it from non-sensitive configuration (`config/system-map.json`, git remote or `.brainrc.json` without secrets).
 
-## Artículo 1 — Cero tokens locales
+## Article 2 — Strict separation between orchestration and product
 
-1. La autenticación con GitHub se delega **exclusivamente** al CLI `gh` y a su almacén seguro de credenciales (`gh auth login`, keyring del sistema).
-2. Queda prohibido guardar tokens, PATs, client secrets, service role keys o credenciales de GitHub en `.brainrc.json`, scripts, tickets, documentación, `.env*`, logs o cualquier archivo versionado.
-3. Los scripts de brain-corp usan `gh` como única interfaz con GitHub. No deben implementar clientes HTTP propios con tokens embebidos ni leer tokens desde variables que se persistan en disco.
-4. Si un script necesita el repositorio destino, lo recibe por argumento o lo resuelve desde la configuración no sensible (`config/system-map.json`, remoto git o `.brainrc.json` sin secretos).
-5. Todo PR debe declarar que no introduce secretos. Cualquier secreto detectado se rota y se elimina del historial antes de continuar.
+0. The ecosystem's central constitution lives at `<workspace>/.brain/memory/constitution.md` and applies to all repositories without being duplicated per sidecar. The CLI (`brain init` / `brain setup`) deploys it if missing and never overwrites a customized one.
+1. The brain-corp root contains only: `.agents/`, `.opencode/`, `config/`, `scripts/`, `templates/brain/`, orchestration documentation and governance files.
+2. The root **does not contain business logic, components, data schemas or product code**. Those artifacts belong to the sidecars registered in `config/system-map.json` and are modified inside their repository/submodule.
+3. Sidecars must not depend on root scripts or metadata to run in production. The root orchestrates; sidecars execute.
+4. Sidecar paths are always resolved from `config/system-map.json`; absolute machine paths are never hardcoded in scripts or tickets.
+5. Every sidecar change preserves its own constitution, code rules, specs and quality gates. brain-corp does not replace or duplicate those rules.
 
-## Artículo 2 — Separación estricta entre orquestación y producto
+## Article 3 — Sanity-check as pre-flight gatekeeper
 
-0. La constitución central del ecosistema vive en `<workspace>/.brain/memory/constitution.md` y aplica a todos los repositorios sin duplicarse por sidecar. El CLI (`brain init` / `brain setup`) la despliega si no existe y nunca sobrescribe una ya personalizada.
-1. La raíz de brain-corp contiene únicamente: `.agents/`, `.opencode/`, `config/`, `scripts/`, `templates/brain/`, documentación de orquestación y archivos de gobernanza.
-2. La raíz **no contiene lógica de negocio, componentes, esquemas de datos ni código de producto**. Esos artefactos pertenecen a los sidecars registrados en `config/system-map.json` y se modifican dentro de su repositorio/submódulo.
-3. Los sidecars no deben depender de scripts o metadatos de la raíz para funcionar en producción. La raíz orquesta; los sidecars ejecutan.
-4. Las rutas de los sidecars se resuelven siempre desde `config/system-map.json`; nunca se codifican rutas absolutas de la máquina en scripts o tickets.
-5. Todo cambio en un sidecar conserva su propia constitución, reglas de código, specs y quality gates. brain-corp no reemplaza ni duplica esas reglas.
+1. `npm run sanity` or `/sanity-check` is **mandatory** before publishing tickets to GitHub.
+2. `scripts/sync-github.js` runs the sanity check by default and **aborts** on blocking errors. `--skip-sanity` is only allowed in an explicit emergency and must be justified in the operation report.
+3. The sanity check validates, at minimum: unique IDs, mandatory frontmatter, `status`/folder coherence, allowed domains, existing dependencies without cycles, obvious duplicates, mandatory ticket sections and the UI→Backend rule (a `client` sidecar ticket that requires API changes must depend on a `provider` or `shared` sidecar ticket).
+4. The result is recorded in `.agents/tickets/.sanity-check.json`. A ticket is ready for sync only when it has no blocking errors.
+5. The sanity check does not replace semantic review: `/sanity-check` contrasts tickets with `config/system-map.json`, the real sidecar schemas, contracts and APIs.
+6. Canonical ticket body sections are `## Context / Finding`, `## Technical Requirements` and `## Architecture Impact`. The validator also accepts the legacy Spanish equivalents (`## Contexto / Hallazgo`, `## Requerimientos Técnicos`, `## Impacto en la Arquitectura`) for backward compatibility.
 
-## Artículo 3 — Sanity-check como pre-flight gatekeeper
+## Article 4 — Mandatory ticket traceability
 
-1. `npm run sanity` o `/sanity-check` es **obligatorio** antes de publicar tickets en GitHub.
-2. `scripts/sync-github.js` ejecuta el sanity check por defecto y **aborta** si hay errores bloqueantes. `--skip-sanity` solo se permite en una emergencia explícita y debe justificarse en el reporte de la operación.
-3. El sanity check valida, como mínimo: IDs únicos, frontmatter obligatorio, coherencia `status`/carpeta, dominios permitidos, dependencias existentes y sin ciclos, duplicados evidentes, secciones obligatorias del ticket y la regla UI→Backend (un ticket de un sidecar `client` que exige cambios de API debe depender de un ticket de un sidecar `provider` o `shared`).
-4. El resultado se registra en `.agents/tickets/.sanity-check.json`. Un ticket está listo para sync solo cuando no tiene errores bloqueantes.
-5. El sanity check no reemplaza la revisión semántica: `/sanity-check` contrasta los tickets con `config/system-map.json`, los esquemas, contratos y APIs reales de los sidecars.
+1. Every product, contract, schema, configuration or delivery change must be associated with a `TICK-XXX` ticket in `.agents/tickets/`.
+2. The spec generated by the SDD engine (`<repo>/.brain/features/<TICK-XXX>/spec.md`) must include `Source Ticket: .agents/tickets/<state>/TICK-XXX-<slug>.md`.
+3. Every PR must declare `Closes #<issue>` or the associated issue, and the local ticket must reflect the real state (`backlog`, `in-analysis`, `ready`, `done`).
+4. When completing a delivery, use `/complete TICK-XXX <PR>` or the equivalent flow: `status: "done"`, PR reference in `## Delivery`, move to `.agents/tickets/done/` and close the issue.
+5. An issue closed on GitHub must be reflected as `done` and move the ticket to `done/` on the next `sync:pull`; a reopened issue returns the ticket to `backlog/`.
+6. Tickets with `github_issue` are not deleted without explicit authorization. Unpublished local tickets may be corrected or deleted if invalid or duplicated.
+7. Orphan changes are not accepted: if a finding outside scope appears during implementation, create a new ticket with `dependencies` instead of silently expanding the original ticket.
 
-## Artículo 4 — Trazabilidad obligatoria por tickets
+## Article 5 — SDD and spec-first in sidecars
 
-1. Todo cambio de producto, contrato, esquema, configuración o entrega debe estar asociado a un ticket `TICK-XXX` en `.agents/tickets/`.
-2. La spec generada por el motor SDD (`<repo>/.brain/features/<TICK-XXX>/spec.md`) debe incluir `Source Ticket: .agents/tickets/<estado>/TICK-XXX-<slug>.md`.
-3. Todo PR debe declarar `Closes #<issue>` o el issue asociado, y el ticket local debe reflejar el estado real (`backlog`, `in-analysis`, `ready`, `done`).
-4. Al completar una entrega se usa `/complete TICK-XXX <PR>` o el flujo equivalente: `status: "done"`, referencia del PR en `## Entrega`, movimiento a `.agents/tickets/done/` y cierre del issue.
-5. Un issue cerrado en GitHub debe reflejarse como `done` y mover el ticket a `done/` en el siguiente `sync:pull`; un issue reabierto devuelve el ticket a `backlog/`.
-6. No se eliminan tickets con `github_issue` sin autorización explícita. Los tickets locales no publicados pueden corregirse o eliminarse si son inválidos o duplicados.
-7. No se aceptan cambios “huérfanos”: si durante la implementación aparece un hallazgo fuera de alcance, se crea un ticket nuevo con `dependencies` en lugar de ampliar silenciosamente el ticket original.
+1. The canonical flow is: ticket → sanity check → sync → `/init-work TICK-XXX` → `/specify` → `/plan` → `/tasks` → `/implement (Checkpoint | Batch)` → `/analyze` → PR → `/complete`.
+2. No change that alters behavior, contract or interface already governed by a spec may be implemented without first updating the corresponding spec, even if it arrives as a bugfix.
+3. Spec amendments are recorded in the Change Log of the affected module's `tasks.md` with date, ticket, branch, files, reason, previous/new behavior and tests.
+4. Hotfixes may skip the heavy SDD phase, but **must not** skip: emergency ticket, spec impact validation and explicit impact declaration in the PR.
+5. If no spec exists for the hotfix area, the PR declares `Spec impact: none` or `Spec pending` and a follow-up ticket is opened to document it.
 
-## Artículo 5 — SDD y spec-first en los sidecars
+## Article 6 — Git, branches and Pull Requests
 
-1. El flujo canónico es: ticket → sanity check → sync → `/init-work TICK-XXX` → `/specify` → `/plan` → `/tasks` → `/implement (Checkpoint | Batch)` → `/analyze` → PR → `/complete`.
-2. Ningún cambio que altere comportamiento, contrato o interfaz ya gobernado por una spec puede implementarse sin actualizar antes la spec correspondiente, incluso si llega como bugfix.
-3. Las enmiendas de spec se registran en el Change Log de `tasks.md` del módulo afectado con fecha, ticket, rama, archivos, motivo, comportamiento anterior/nuevo y pruebas.
-4. Los hotfix pueden omitir la fase pesada del SDD, pero **no** pueden omitir: ticket de emergencia, validación de impacto en especificaciones y declaración explícita del impacto en el PR.
-5. Si no existe spec para el área del hotfix, el PR declara `Spec impact: none` o `Spec pendiente` y se abre el ticket de seguimiento para documentarla.
+1. Feature branches generated by the SDD: `TICK-XXX-<slug>` (for example `TICK-014-inventory-data-contract`).
+2. Fix and hotfix branches: `fix/TICK-XXX-<slug>`; if there is no ticket, `fix/<slug>` only in the sidecar that allows it. `hotfix/` is not introduced unless the sidecar constitution is amended.
+3. Before creating a branch, verify state against the base branch (`git fetch origin`, `git log`/`git diff` against `origin/main` or the agreed base), according to the sidecar constitution.
+4. Commits follow Conventional Commits: `feat(<module>): ...`, `fix(<module>): ...`, `docs(spec): ...`, `refactor(<module>): ...`.
+5. The agent **never** runs `git commit`, `git push`, `git merge` or opens a PR autonomously. It proposes the command and requests explicit authorization.
+6. Every PR uses `.github/PULL_REQUEST_TEMPLATE.md` and declares: ticket/issue, summary, risks, rollback, spec impact, executed validations and quality checklist.
 
-## Artículo 6 — Git, ramas y Pull Requests
+## Article 7 — Multi-repository ecosystem integrity
 
-1. Ramas de features generadas por el SDD: `TICK-XXX-<slug>` (por ejemplo `TICK-014-inventory-data-contract`).
-2. Ramas de corrección y hotfix: `fix/TICK-XXX-<slug>`; si no hay ticket, `fix/<slug>` solo en el sidecar que lo permita. No se introduce `hotfix/` salvo que se enmiende la constitución del sidecar.
-3. Antes de crear una rama se verifica el estado contra la rama base (`git fetch origin`, `git log`/`git diff` contra `origin/main` o la base acordada), según la constitución del sidecar.
-4. Los commits siguen Conventional Commits: `feat(<módulo>): ...`, `fix(<módulo>): ...`, `docs(spec): ...`, `refactor(<módulo>): ...`.
-5. El agente **nunca** ejecuta `git commit`, `git push`, `git merge` ni abre un PR de forma autónoma. Propone el comando y solicita autorización explícita.
-6. Todo PR usa la plantilla de `.github/PULL_REQUEST_TEMPLATE.md` y declara: ticket/issue, resumen, riesgos, rollback, impacto en specs, validaciones ejecutadas y checklist de calidad.
-7. No se reescribe historia compartida: prohibido `amend` o `force-push` sobre commits ya publicados.
-8. El merge no se considera entrega terminada hasta ejecutar `/complete` o hasta que `sync:pull` mueva el ticket a `done/`.
+1. Every sidecar registered in `config/system-map.json` has an explicit role: `provider`, `client` or `standalone`.
+2. `standalone` sidecars operate autonomously. Any integration with another sidecar is considered **not implemented** until a ticket, contract and tests exist.
+3. Model, type or business-rule equivalence between sidecars is not assumed. Representation differences (amounts, dates, identifiers) require explicit conversion.
+4. Any relationship between sidecars must be declared in `config/system-map.json` with its protocol, direction and description.
+5. Business rules are not duplicated in the root; they are documented and executed in the owning sidecar.
 
-## Artículo 7 — Integridad del ecosistema multi-repositorio
+## Article 8 — Compliance and amendments
 
-1. Los sidecars con rol `provider` son la fuente de verdad de datos y reglas de negocio de su dominio; los sidecars con rol `client` consumen sus contratos. Un cambio de contrato requiere ticket del provider o `shared`.
-2. Los sidecars con rol `standalone` operan de forma autónoma. Cualquier integración con otro sidecar se considera **no implementada** hasta que exista ticket, contrato y pruebas.
-3. No se asume equivalencia de modelos, tipos ni reglas de negocio entre sidecars. Las diferencias de representación (importes, fechas, identificadores) requieren conversión explícita.
-4. Cualquier relación entre sidecars debe declararse en `config/system-map.json` con su protocolo, dirección y descripción.
-5. Las reglas de negocio no se duplican en la raíz; se documentan y ejecutan en el sidecar propietario.
-
-## Artículo 8 — Cumplimiento y enmiendas
-
-1. Los scripts de brain-corp hacen cumplir automáticamente lo que es determinista: sanity check, sincronización, cierre y movimiento de tickets. Lo que requiere juicio (contradicciones semánticas, impacto de negocio) se revisa en `/sanity-check` y en el PR.
-2. Toda excepción a esta constitución debe quedar registrada en el ticket o PR con justificación, alcance y riesgo.
-3. Las enmiendas a esta constitución se proponen mediante PR, indican el motivo, el impacto en scripts/tickets existentes y la fecha de vigencia.
-4. Si una regla de esta constitución contradice la constitución de un sidecar en materia de código o datos, prevalece la del sidecar. Si la contradicción afecta tickets, sync o trazabilidad, prevalece esta constitución.
+1. brain-corp scripts automatically enforce what is deterministic: sanity check, synchronization, closing and moving tickets. What requires judgment (semantic contradictions, business impact) is reviewed in `/sanity-check` and in the PR.
+2. Every exception to this constitution must be recorded in the ticket or PR with justification, scope and risk.
+3. Amendments to this constitution are proposed via PR, stating the reason, impact on existing scripts/tickets and effective date.
+4. If a rule in this constitution contradicts a sidecar constitution regarding code or data, the sidecar's rule prevails. If the contradiction affects tickets, sync or traceability, this constitution prevails.
 
 ---
 
-## Flujo canónico
+## Canonical flow
 
-```
+```text
 TICK-XXX → /sanity-check → npm run sync → /init-work TICK-XXX → /specify → /plan
-→ /tasks → /implement (Checkpoint | Batch) → /analyze → PR (plantilla) → /complete → done/
+→ /tasks → /implement (Checkpoint | Batch) → /analyze → PR (template) → /complete → done/
 ```
 
-## Flujo de emergencia
+## Emergency flow
 
-```
-/hotfix → ticket TICK-XXX + rama fix/TICK-XXX-slug → validación de impacto
-→ commit fix(<módulo>): ... → PR con Spec impact → /complete
+```text
+/hotfix → ticket TICK-XXX + branch fix/TICK-XXX-slug → impact validation
+→ commit fix(<module>): ... → PR with Spec impact → /complete
 ```
 
-**Principio rector:** la raíz orquesta y audita; los sidecars implementan y gobiernan su dominio. Ningún cambio sin ticket, ningún ticket sin trazabilidad, ningún sync sin sanity check.
+**Guiding principle:** the root orchestrates and audits; sidecars implement and govern their domain. No change without a ticket, no ticket without traceability, no sync without a sanity check.

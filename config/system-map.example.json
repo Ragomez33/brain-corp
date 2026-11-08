@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "generatedAt": "2026-11-03",
   "root": ".",
-  "description": "Ejemplo de referencia: mapa de topología de un ecosistema brain-corp con sidecars provider, client y standalone. Copia este archivo a system-map.json si quieres partir de una topología ya poblada.",
+  "description": "Reference example: topology map for a brain-corp ecosystem with provider, client and standalone sidecars. Copy this file to system-map.json if you want to start from a populated topology.",
   "repositories": [
     {
       "id": "example-api",
@@ -11,7 +11,7 @@
       "remote": "git@github.com:example-org/example-api.git",
       "type": "backend-api",
       "role": "provider",
-      "description": "API que expone datos y reglas de negocio a otros sidecars.",
+      "description": "API that exposes data and business rules to other sidecars.",
       "port": 4000,
       "domains": [
         "catalog",
@@ -26,7 +26,7 @@
       "remote": "git@github.com:example-org/example-web.git",
       "type": "frontend-web",
       "role": "client",
-      "description": "Aplicación web que consume la API del sidecar provider.",
+      "description": "Web application that consumes the provider sidecar API.",
       "port": 3000,
       "apiEnvVar": "NEXT_PUBLIC_API_ENDPOINT",
       "domains": [
@@ -43,7 +43,7 @@
       "remote": "git@github.com:example-org/example-app.git",
       "type": "standalone-app",
       "role": "standalone",
-      "description": "Aplicación autónoma que no depende de otros sidecars.",
+      "description": "Autonomous application that does not depend on other sidecars.",
       "domains": [
         "dashboard",
         "settings",
@@ -57,16 +57,15 @@
       "to": "example-api",
       "type": "http-rest",
       "protocol": "HTTPS",
-      "description": "example-web consume la API de example-api."
+      "description": "example-web consumes the example-api API."
     }
   ],
   "topology": {
-    "pattern": "monorepo-contenedor con git submodules",
-    "gitmodules": ".gitmodules",
+    "pattern": "multi-repository workspace",
     "groups": [
       {
         "name": "example",
-        "description": "Grupo de ejemplo: provider + client acoplados por API.",
+        "description": "Example group: provider + client coupled by API.",
         "members": [
           "example-api",
           "example-web"
@@ -77,8 +76,8 @@
   "rootOrchestration": {
     "enabled": true,
     "root": ".",
-    "rule": "Todos los comandos y skills operan desde la raíz de brain-corp. Las rutas de los sidecars se resuelven desde config/system-map.json; nunca se requiere cambiar de directorio.",
-    "pathResolution": "repositories[].path (relativo a la raíz)",
+    "rule": "All commands and skills operate from the brain-corp root. Sidecar paths are resolved from config/system-map.json; changing directories is never required.",
+    "pathResolution": "repositories[].path (relative to root)",
     "neverCd": true
   },
   "domains": {
@@ -100,8 +99,8 @@
     ]
   },
   "notes": [
-    "Este archivo es solo una referencia de estructura; el mapa activo es config/system-map.json.",
-    "Los roles disponibles son provider, client y standalone.",
-    "Usa `brain setup` para generar el mapa a partir de tus repositorios reales."
+    "This file is a structure reference only; the active map is config/system-map.json.",
+    "Available roles are provider, client and standalone.",
+    "Use `brain setup` to generate the map from your real repositories."
   ]
 }

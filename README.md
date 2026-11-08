@@ -3,235 +3,254 @@
 [![npm version](https://img.shields.io/npm/v/@rgkoko/brain-corp.svg?color=blue)](https://www.npmjs.com/package/@rgkoko/brain-corp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-CLI de orquestación para ecosistemas multi-repositorio: mantiene juntos varios productos o servicios independientes, centraliza la topología de sidecars y coordina el análisis, la creación y la sincronización de tickets con GitHub Issues.
+Orchestration CLI for multi-repository ecosystems: it keeps several independent products or services together, centralizes the sidecar topology and coordinates analysis, ticket creation and synchronization with GitHub Issues.
 
-## ¿Por qué existe este proyecto?
+## Why does this project exist?
 
-Los ecosistemas multi-repositorio suelen parecer correctos repo por repo, pero fallan en las costuras: contratos desalineados, funcionalidades sin endpoint, endpoints sin consumidor o modelos de datos que no coinciden.
+Multi-repository ecosystems usually look correct repo by repo, but they fail at the seams: misaligned contracts, features without an endpoint, endpoints without a consumer, or mismatched data models.
 
-**brain-corp es la capa de coordinación.** No implementa producto: registra la topología, detecta vacíos de integración, los convierte en tickets accionables, los sincroniza con GitHub y los encamina hacia una especificación SDD (`.brain/`) en el repositorio correcto.
+**brain-corp is the coordination layer.** It does not implement product: it records the topology, detects integration gaps, turns them into actionable tickets, synchronizes them with GitHub and routes them toward an SDD specification (`.brain/`) in the correct repository.
 
-## Topología
-
-```
-brain-corp/                     ← raíz de orquestación (este repo)
-├── config/system-map.json      ← topología activa (se genera con brain setup)
-├── config/system-map.example.json
-├── templates/                  ← assets de distribución: brain/ (SDD) y agents/{en,es}/
-├── .agents/
-│   ├── prompts/analyst.md      ← rol del Arquitecto Analista
-│   └── tickets/                ← estados de tickets (se crean bajo demanda)
-├── scripts/                    ← onboarding, SDD, sync, auditoría, i18n y agentes
-├── src/                        ← módulos TypeScript (licencia y auditorías Enterprise)
-├── dist/                       ← build de TypeScript (se genera con npm run build)
-├── tsconfig.json               ← configuración del build Enterprise
-├── bin/brain.js                ← binario global `brain`
-└── sidecars/                   ← carpeta vacía; aquí viven los repositorios registrados
-```
-
-Cada sidecar es un repositorio git propio. brain-corp no los modifica desde aquí: los inspecciona, los analiza y genera trabajo para ellos. La carpeta `sidecars/` nace vacía y se puebla con `brain setup` (detección vía GitHub CLI o registro manual).
-
-## Qué hace
-
-### 1. Onboarding y sesión
-
-`npm run init-brain` detecta el usuario de GitHub, configura el Project destino y el agente por defecto, guarda todo en `.brainrc.json`, lanza un `sync-pull` inicial y, opcionalmente, arranca el watcher.
-
-Si no hay sidecars configurados (o el workspace está limpio), primero abre el onboarding interactivo **antes de ejecutar `sync-pull` o validar la sesión de GitHub Issues**:
-
-1. Consulta todos los repositorios accesibles (personales y de organizaciones) con `gh api --paginate user/repos`.
-2. Si hay muchos repositorios, permite filtrar por organización.
-3. Muestra un menú multi-select: flechas para moverte, espacio para marcar y Enter para confirmar.
-4. Permite asignar rol (`provider`, `client`, `standalone`) a cada seleccionado.
-5. Genera las rutas `sidecars/<repo>` en `config/system-map.json`, sin prefijos de owner.
-6. Ofrece clonarlos con `gh repo clone`.
-7. Si `gh` falla o no está autenticado, continúa con registro manual por URL o ruta local.
-
-Las confirmaciones del wizard y de `brain init` usan un selector de flechas `Sí / No`; la entrada de texto queda reservada para URLs, rutas, nombres y campos equivalentes.
-
-Al elegir el agente, `brain init` aprovisiona automáticamente el workspace:
-
-- `.agents/prompts/` y `.agents/skills/` con el rol del analista y las skills base.
-- `.brain/templates/` con las plantillas EARS del motor SDD.
-- `.brain/memory/` con la constitución central (`constitution.md` y `constitution-template.json`).
-- `.opencode/commands/` para OpenCode (`/cross-analyze`, `/init-work`, `/specify`, `/plan`, `/tasks`, `/implement`, `/analyze`, `/sanity`, `/sync`).
-- Estructuras equivalentes para Claude Code (`.claude/commands/`), Cursor (`.cursor/rules/`) o Antigravity (`.antigravity/rules/`).
-- `AGENTS.md` como punto de entrada genérico para otros agentes.
-
-Al terminar, abre el agente configurado.
-
-#### Idioma / Language
-
-`brain init` pregunta `Select your preferred language / Selecciona tu idioma` y guarda `language` en `.brain/config.json`.
-
-- **Plantillas base:** `templates/brain/en/` es el valor por defecto y garantiza la máxima precisión con modelos de IA. `templates/brain/es/` está disponible cuando se elige español. Los assets de agente (`analyst.md`, skills, comandos y reglas) viven en `templates/agents/en|es/` y el aprovisionamiento copia los del idioma elegido.
-- **Constitución:** `.brain/memory/constitution.md` se mantiene en inglés como fuente canónica.
-- **Artefactos:** `spec.md`, `plan.md`, `tasks.md` y `contract.md` se generan con la plantilla del idioma configurado, y los comandos indican al agente redactar en ese idioma.
-
-### 2. Sincronización con GitHub Issues
-
-- `npm run sync` — ejecuta el sanity check previo y publica los tickets de `.agents/tickets/backlog/` como issues, escribiendo el `github_issue` en el frontmatter. Si el sanity check falla, aborta; usa `--skip-sanity` para forzarlo.
-- `npm run sync:pull` — trae issues (abiertos y cerrados) como tickets locales, infiere estado (`backlog`/`done`) y marca como `needs_formatting` los que no tienen frontmatter válido.
-- `npm run watch` — bucle que ejecuta `sync-pull` + normalización cada 45 s (configurable).
-- `npm run normalize` — completa y mueve tickets `needs_formatting` a `backlog` con el formato exigido.
-- `npm run sanity` — audita coherencia de tickets (IDs, estados, dependencias, ciclos, duplicados y reglas client→provider); con `--write` escribe `.agents/tickets/.sanity-check.json`. Se ejecuta automáticamente antes de `npm run sync`.
-- `npm run complete -- TICK-014 [PR]` — cierra la entrega: marca `status: "done"`, registra el PR en `## Entrega`, mueve el ticket a `.agents/tickets/done/` y cierra el issue de GitHub si existe.
-- `npm run hotfix -- --title "..." --domain <sidecar> --module <módulo> --spec-impact none` — crea un ticket de emergencia, prepara la rama `fix/TICK-XXX-slug` en el sidecar y sugiere el commit `fix(<módulo>): ...`. Con `--publish` crea el issue vía `gh`.
-
-### 3. Análisis y tickets
-
-El rol del **Arquitecto Analista** (`.agents/prompts/analyst.md`) contrasta las capas de cada feature —datos → contrato/API → consumo en el cliente— y reporta vacíos concretos como tickets en Markdown con frontmatter estricto:
+## Topology
 
 ```
-.agents/tickets/<estado>/TICK-XXX-<slug>.md
+brain-corp/                     ← orchestration CLI (this repo)
+├── bin/brain.js                ← global `brain` binary
+├── src/                        ← TypeScript modules (Enterprise license and audits)
+├── scripts/                    ← onboarding, SDD, sync, audit, i18n and agents
+├── templates/
+│   ├── brain/{en,es,memory}/   ← EARS templates and central constitution
+│   ├── agents/{en,es}/         ← prompts, skills, commands and editor rules
+│   ├── i18n/{en,es}/           ← validation language packs
+│   └── pr/{en,es}/             ← pull request templates
+├── config/                     ← neutral map and reference example (source repo only)
+├── dist/                       ← TypeScript build (generated by npm run build)
+├── tsconfig.json               ← Enterprise build configuration
+├── constitution.md             ← repository governance (not published to npm)
+├── README.md / LICENSE
+└── package.json
 ```
 
-Estados: `needs_formatting` → `backlog` → `in-analysis` → `ready` → `done`. El campo `status` del frontmatter siempre coincide con la carpeta.
+Each sidecar is its own git repository. brain-corp does not modify them from here: it inspects them, analyzes them and generates work for them. In a user workspace, `sidecars/` starts empty and is populated by `brain setup` (GitHub CLI detection or manual registration).
 
-El comando `/sanity-check` audita el backlog antes del sync: contrasta tickets de sidecars `client` con el contrato real de los `provider`, añade dependencias faltantes, elimina redundancias y deja constancia del resultado en `.agents/tickets/.sanity-check.json`.
+## What it does
 
-El comando `/complete` cierra un ticket tras la entrega: actualiza el frontmatter, registra la referencia del PR, lo mueve a `done/` y cierra su issue en GitHub.
+### 1. Onboarding and session
 
-### 4. Ticket → especificación (SDD nativo en `.brain/`)
+`npm run init-brain` detects the GitHub user, configures the target Project and default agent, saves everything in `.brainrc.json`, runs an initial `sync-pull` and, optionally, starts the watcher.
 
-Cada repositorio conserva sus especificaciones y su estado de ejecución en `.brain/`. La memoria (`memory/`) es central del workspace y no se duplica por sidecar:
+If no sidecars are configured (or the workspace is clean), it first opens the interactive onboarding **before running `sync-pull` or validating the GitHub Issues session**:
+
+1. Queries all accessible repositories (personal and organization-owned) with `gh api --paginate user/repos`.
+2. If there are many repositories, allows filtering by organization.
+3. Shows a multi-select menu: arrows to move, space to select and Enter to confirm.
+4. Allows assigning a role (`provider`, `client`, `standalone`) to each selection.
+5. Generates `sidecars/<repo>` paths in `config/system-map.json`, without owner prefixes.
+6. Offers to clone them with `gh repo clone`.
+7. If `gh` fails or is not authenticated, continues with manual registration by URL or local path.
+
+Wizard and `brain init` confirmations use a `Yes / No` arrow selector; text input is reserved for URLs, paths, names and equivalent fields.
+
+When choosing the agent, `brain init` automatically provisions the workspace:
+
+- `.agents/prompts/` and `.agents/skills/` with the analyst role and base skills.
+- `.brain/templates/` with the SDD engine EARS templates.
+- `.brain/memory/` with the central constitution (`constitution.md` and `constitution-template.json`).
+- `.opencode/commands/` for OpenCode (`/cross-analyze`, `/init-work`, `/specify`, `/plan`, `/tasks`, `/implement`, `/analyze`, `/sanity`, `/sync`).
+- Equivalent structures for Claude Code (`.claude/commands/`), Cursor (`.cursor/rules/`) or Antigravity (`.antigravity/rules/`).
+- `AGENTS.md` as a generic entry point for other agents.
+
+When finished, it opens the configured agent.
+
+#### Language
+
+`brain init` asks `Select your preferred language / Selecciona tu idioma` and stores `language` in `.brain/config.json`.
+
+- **Base templates:** `templates/brain/en/` is the default and guarantees maximum precision with AI models. `templates/brain/es/` is available when Spanish is selected. Agent assets (`analyst.md`, skills, commands and rules) live in `templates/agents/en|es/` and provisioning copies those of the selected language.
+- **Constitution:** `.brain/memory/constitution.md` stays in English as the canonical source.
+- **Artifacts:** `spec.md`, `plan.md`, `tasks.md` and `contract.md` are generated with the template of the configured language, and the commands instruct the agent to write in that language.
+
+### 2. GitHub Issues synchronization
+
+- `npm run sync` — runs the pre-flight sanity check and publishes `.agents/tickets/backlog/` tickets as issues, writing `github_issue` in the frontmatter. If the sanity check fails, it aborts; use `--skip-sanity` to force it.
+- `npm run sync:pull` — imports issues (open and closed) as local tickets, infers state (`backlog`/`done`) and marks those without valid frontmatter as `needs_formatting`.
+- `npm run watch` — loop that runs `sync-pull` + normalization every 45 s (configurable).
+- `npm run normalize` — completes and moves `needs_formatting` tickets to `backlog` with the required format.
+- `npm run sanity` — audits ticket coherence (IDs, states, dependencies, cycles, duplicates and client→provider rules); with `--write` it writes `.agents/tickets/.sanity-check.json`. It runs automatically before `npm run sync`.
+- `npm run complete -- TICK-014 [PR]` — closes the delivery: sets `status: "done"`, records the PR in `## Delivery`, moves the ticket to `.agents/tickets/done/` and closes the GitHub issue if it exists.
+- `npm run hotfix -- --title "..." --domain <sidecar> --module <module> --spec-impact none` — creates an emergency ticket, prepares the `fix/TICK-XXX-slug` branch in the sidecar and suggests the `fix(<module>): ...` commit. With `--publish` it creates the issue via `gh`.
+
+### 3. Analysis and tickets
+
+The **Analyst Architect** role (`.agents/prompts/analyst.md`) contrasts each feature's layers —data → contract/API → client consumption— and reports concrete gaps as Markdown tickets with strict frontmatter:
+
+```
+.agents/tickets/<state>/TICK-XXX-<slug>.md
+```
+
+States: `needs_formatting` → `backlog` → `in-analysis` → `ready` → `done`. The frontmatter `status` field always matches the folder.
+
+Canonical ticket body sections are `## Context / Finding`, `## Technical Requirements` and `## Architecture Impact`. The sanity check also accepts the legacy Spanish headers (`## Contexto / Hallazgo`, `## Requerimientos Técnicos`, `## Impacto en la Arquitectura`) for backward compatibility.
+
+The `/sanity-check` command audits the backlog before sync: it contrasts `client` sidecar tickets against the real `provider` contract, adds missing dependencies, removes redundancies and records the result in `.agents/tickets/.sanity-check.json`.
+
+The `/complete` command closes a ticket after delivery: it updates the frontmatter, records the PR reference, moves it to `done/` and closes its GitHub issue.
+
+### 4. Ticket → specification (native SDD in `.brain/`)
+
+Each repository keeps its specifications and execution state in `.brain/`. Memory (`memory/`) is central to the workspace and is not duplicated per sidecar:
 
 ```text
 <repo>/.brain/
-├── active.json              ← ticket activo y fase actual
-├── templates/               ← plantillas EARS
+├── active.json              ← active ticket and current phase
+├── templates/               ← EARS templates
 └── features/<TICK-XXX>/
-    ├── spec.md              ← requisitos EARS
-    ├── plan.md              ← estrategia técnica
-    ├── tasks.md             ← tareas atómicas
-    ├── contract.md          ← solo si cruza sidecars
-    └── analysis.md          ← reporte de spec drift
+    ├── spec.md              ← EARS requirements
+    ├── plan.md              ← technical strategy
+    ├── tasks.md             ← atomic tasks
+    ├── contract.md          ← only if it crosses sidecars
+    └── analysis.md          ← spec drift report
 
 <workspace>/.brain/
-├── config.json              ← preferencias (language)
-└── memory/                  ← constitución central
+├── config.json              ← preferences (language)
+└── memory/                  ← central constitution
 ```
 
-Flujo:
+Flow:
 
 ```
 /init-work TICK-XXX → /specify → /plan → /tasks → /implement (Checkpoint | Batch) → /analyze
 ```
 
-- `/init-work` crea la feature y fija `.brain/active.json`; genera `contract.md` solo si el ticket es `shared` o cruza `relationships` del mapa.
-- `/implement` soporta modo **checkpoint** (una tarea y confirmación) o **batch** (bloque completo autónomo).
-- `/analyze` audita coherencia y detecta desvío entre spec, tareas y código. El antiguo `/analyze` generador de tickets pasa a llamarse `/cross-analyze`.
-- Si un ticket es `shared`, elige el repositorio base con `--repo <id>`; la spec y el contrato viven allí y el orquestador resuelve las dependencias desde `system-map.json`, sin duplicar specs globalmente.
+- `/init-work` creates the feature and sets `.brain/active.json`; it generates `contract.md` only if the ticket is `shared` or crosses map `relationships`.
+- `/implement` supports **checkpoint** mode (one task and confirmation) or **batch** mode (autonomous complete block).
+- `/analyze` audits coherence and detects drift between spec, tasks and code. The former ticket-generating `/analyze` is now called `/cross-analyze`.
+- If a ticket is `shared`, choose the base repository with `--repo <id>`; the spec and contract live there and the orchestrator resolves dependencies from `system-map.json`, without duplicating specs globally.
 
-## Requisitos
+## Requirements
 
 - Node.js 18+
-- [`gh`](https://cli.github.com/) autenticado (`gh auth status`)
-- Los agentes que quieras usar (`opencode`, etc.) disponibles en el `PATH`
-- Git para los repositorios que registres como sidecars
+- [`gh`](https://cli.github.com/) authenticated (`gh auth status`)
+- The agents you want to use (`opencode`, etc.) available in `PATH`
+- Git for the repositories you register as sidecars
 
-## Uso rápido
+## Quick start
 
 ```bash
 npm install
-npm run setup         # detectar repos con gh, asignar roles y generar sidecars/<repo>
-npm run init-brain    # onboarding + sesión + watcher opcional + lanza el agente
-npm run init-brain -- --lang es   # fijar idioma sin preguntar (en | es)
-npm run agents:sync   # re-desplegar prompts, skills y comandos del motor de agente
-npm run reset -- --repo <id>   # vaciar el estado activo (.brain/active.json)
-npm run sync:pull     # importar issues a tickets
-npm run sync          # publicar tickets como issues
-npm run watch         # sincronización continua
-npm run init-work -- TICK-XXX   # iniciar feature SDD en .brain/
-npm run specify -- TICK-XXX     # generar spec.md (EARS)
-npm run plan -- TICK-XXX        # generar plan.md
-npm run tasks -- TICK-XXX       # generar tasks.md
-npm run implement -- TICK-XXX   # ejecutar tareas (checkpoint o batch)
-npm run analyze -- TICK-XXX     # auditar spec drift
+npm run setup         # detect repos with gh, assign roles and generate sidecars/<repo>
+npm run init-brain    # onboarding + session + optional watcher + launches the agent
+npm run init-brain -- --lang es   # set language without prompting (en | es)
+npm run agents:sync   # redeploy agent engine prompts, skills and commands
+npm run reset -- --repo <id>   # clear active state (.brain/active.json)
+npm run pr -- TICK-XXX        # create a pull request from the ticket
+npm run sync:pull     # import issues as tickets
+npm run sync          # publish tickets as issues
+npm run watch         # continuous synchronization
+npm run init-work -- TICK-XXX   # start SDD feature in .brain/
+npm run specify -- TICK-XXX     # generate spec.md (EARS)
+npm run plan -- TICK-XXX        # generate plan.md
+npm run tasks -- TICK-XXX       # generate tasks.md
+npm run implement -- TICK-XXX   # run tasks (checkpoint or batch)
+npm run analyze -- TICK-XXX     # audit spec drift
 ```
 
-### CLI global
+### Global CLI
 
-`package.json` expone el binario `brain`. Tras `npm link` (o `npm install -g .`):
+`package.json` exposes the `brain` binary. After `npm link` (or `npm install -g .`):
 
-El CLI opera siempre sobre el **directorio actual** (`process.cwd()`): lee `config/system-map.json`, crea `.brainrc.json`, gestiona tickets y lanza el agente desde ahí, no desde la carpeta de instalación del paquete.
+The CLI always operates on the **current directory** (`process.cwd()`): it reads `config/system-map.json`, creates `.brainrc.json`, manages tickets and launches the agent from there, not from the package installation folder.
 
 ```bash
-brain setup           # descubre repos con gh api, multi-select y asignación de roles
-brain setup --manual  # omite GitHub y registra por URL o ruta local
-brain init            # onboarding + sesión + lanzamiento del agente
-brain agents:sync     # re-desplegar assets del motor (--agent, --overwrite)
-brain reset --repo <id>   # vaciar el estado activo de un repositorio
-brain reset --all         # vaciar el estado activo de todos los repositorios
-brain init-work TICK-XXX  # crear feature en .brain/features/<ticket>/
-brain specify TICK-XXX    # generar spec.md EARS
-brain plan TICK-XXX       # generar plan.md
-brain tasks TICK-XXX      # generar tasks.md
-brain implement TICK-XXX  # ejecutar tareas (--mode checkpoint|batch, --complete TXXX)
-brain analyze TICK-XXX    # detectar spec drift
-brain sync:pull       # importar issues
-brain sync            # publicar tickets
-brain sanity          # auditar tickets
-brain hotfix --title "..." --domain <sidecar> --module <módulo> --spec-impact none
+brain setup           # discover repos with gh api, multi-select and role assignment
+brain setup --manual  # skip GitHub and register by URL or local path
+brain init            # onboarding + session + agent launch
+brain agents:sync     # redeploy engine assets (--agent, --overwrite)
+brain reset --repo <id>   # clear active state of one repository
+brain reset --all         # clear active state of all repositories
+brain init-work TICK-XXX  # create feature in .brain/features/<ticket>/
+brain specify TICK-XXX    # generate EARS spec.md
+brain plan TICK-XXX       # generate plan.md
+brain tasks TICK-XXX      # generate tasks.md
+brain implement TICK-XXX  # run tasks (--mode checkpoint|batch, --complete TXXX)
+brain analyze TICK-XXX    # detect spec drift
+brain pr TICK-XXX         # create a PR from the ticket using the bundled template
+brain sync:pull       # import issues
+brain sync            # publish tickets
+brain sanity          # audit tickets
+brain hotfix --title "..." --domain <sidecar> --module <module> --spec-impact none
 ```
 
-En un workspace limpio, el wizard **no incluye ningún proyecto por defecto**: la topología se construye a partir de los repositorios que selecciones. Si `gh` no está autenticado o falla, el registro manual por URL/ruta local es el fallback. El wizard también ofrece clonar los repositorios seleccionados con `gh repo clone`.
+In a clean workspace, the wizard **does not include any project by default**: the topology is built from the repositories you select. If `gh` is not authenticated or fails, manual registration by URL/local path is the fallback. The wizard also offers to clone the selected repositories with `gh repo clone`.
 
-## Auditorías Enterprise
+### Pull requests
 
-La suite de auditorías avanzadas vive en `src/modules/audit/` (TypeScript) y **exige una licencia Enterprise válida** antes de procesar el repositorio.
+`brain pr TICK-XXX` creates a pull request from the ticket using the bundled template for the workspace language (`templates/pr/en` or `templates/pr/es`):
 
 ```bash
-brain audit dead-code       # exports huérfanos y ahorro estimado de bundle (AST)
-brain audit debt-radar      # TODO/FIXME/any + antigüedad git + fricción entre sidecars
-brain audit contract-guard  # breaking changes en esquemas y contract.md
-brain audit security-scan   # requisitos EARS vs controles de seguridad en el código
+brain pr TICK-XXX --base main --draft
+brain pr TICK-XXX --dry-run   # render the body and show the gh command
 ```
 
-Opciones: `--root <dir>`, `--repo <id>`, `--ticket <TICK-XXX>`, `--json`.
+Options: `--repo <id>`, `--title`, `--summary`, `--spec-impact`, `--body-file`, `--lang`, `--draft`, `--dry-run`, `--json`. The command runs `gh pr create` in the resolved sidecar; it **does not run commit or push**, so the branch must already exist on the remote.
 
-### Activación de licencia
+## Enterprise audits
 
-- `BRAIN_LICENSE_TOKEN` (recomendado en CI).
-- `~/.brain/config.json` con `{ "enterpriseLicense": "<payload>.<firma>" }`.
-- Clave pública Ed25519 en `BRAIN_LICENSE_PUBLIC_KEY`, `BRAIN_LICENSE_PUBLIC_KEY_FILE` o `~/.brain/license-public.pem`.
-
-El token es `base64url(payload).base64url(firma)` firmado con Ed25519. El payload incluye `plan: "enterprise"` (o `features: ["audit:*"]`) y `exp` en segundos. La validación es 100% local: no hay llamadas de red ni claves privadas embebidas. Sin licencia válida, `brain audit ...` se bloquea y muestra instrucciones de activación.
-
-Si trabajas desde el código fuente, compila antes de usar las auditorías:
+The advanced audit suite lives in `src/modules/audit/` (TypeScript) and **requires a valid Enterprise license** before processing the repository.
 
 ```bash
-npm run build   # genera dist/ (incluido en el paquete publicado)
+brain audit dead-code       # orphan exports and estimated bundle savings (AST)
+brain audit debt-radar      # TODO/FIXME/any + git age + cross-sidecar friction
+brain audit contract-guard  # breaking changes in schemas and contract.md
+brain audit security-scan   # EARS requirements vs security controls in code
 ```
 
-## Configuración
+Options: `--root <dir>`, `--repo <id>`, `--ticket <TICK-XXX>`, `--json`.
 
-- **`.brain/config.json`** — preferencias locales del workspace, incluido `language: "en" | "es"`. `brain init` pregunta el idioma y lo guarda aquí. También se puede fijar con `--lang en|es` o `BRAIN_LANG`.
-- **`.brainrc.json`** — estado local: usuario, Project de GitHub, agente por defecto y última sesión. Está en `.gitignore`.
-- **`config/system-map.json`** — topología activa: rutas, roles (`provider`/`client`/`standalone`), stacks, dominios, endpoints, esquemas y relaciones entre sidecars. El template base es neutro (sin sidecars); se puebla con `brain setup`. Es la fuente de verdad estructural.
-- **`config/system-map.example.json`** — mapa poblado de referencia con sidecars provider/client/standalone. Cópialo sobre `system-map.json` si quieres partir de una topología de ejemplo.
-- **`.brain/`** — en cada repositorio: `active.json`, `templates/` y `features/<TICK-XXX>/` (`spec.md`, `plan.md`, `tasks.md`, `contract.md`, `analysis.md`). Es la fuente de verdad del SDD.
-- **`templates/brain/`** — plantillas EARS que el motor copia a `<repo>/.brain/templates/` en `init-work`. Contiene `en/` (inglés, por defecto), `es/` (español) y `memory/` (constitución central en inglés).
-- **`templates/agents/`** — assets de distribución por idioma (`en/`, `es/`) para prompts, skills, comandos y reglas. `brain init`/`agents:sync` copian solo los del idioma activo; el paquete npm ya no depende de `.opencode/` ni `.agents/` de desarrollo.
-- **`.brain/.gitignore`** — generado automáticamente con `active.json` para evitar versionar el estado local. `brain complete` y `brain reset` limpian el puntero activo.
-- **`.brain/memory/constitution.md`** — constitución centralizada del ecosistema. `brain init` y `brain setup` la despliegan en el workspace si no existe (nunca sobrescriben una personalizada). `constitution-template.json` expone las mismas reglas en formato máquina.
-- **`.agents/prompts/`** — comportamiento del analista (rol, protocolo, formato de tickets).
-- **`.agents/skills/`** — skills base aprovisionadas (`brain-corp`, `sdd-brain`, `ticket-ops`).
-- **`.opencode/commands/`** — comandos slash de OpenCode aprovisionados para el workspace.
+### License activation
 
-## Principios
+- `BRAIN_LICENSE_TOKEN` (recommended in CI).
+- `~/.brain/config.json` with `{ "enterpriseLicense": "<payload>.<signature>" }`.
+- Ed25519 public key in `BRAIN_LICENSE_PUBLIC_KEY`, `BRAIN_LICENSE_PUBLIC_KEY_FILE` or `~/.brain/license-public.pem`.
 
-1. **Una raíz, nunca `cd`.** Todo opera desde brain-corp; las rutas de los sidecars se resuelven desde `config/system-map.json`.
-2. **Analizar, no implementar.** brain-corp produce diagnóstico y tickets, no cambios en los sidecars.
-3. **Evidencia sobre suposiciones.** Que exista un resolver no implica que haya contrato expuesto; que exista una vista no implica que tenga backend.
-4. **SDD es nativo y local.** Cada repositorio conserva su spec y estado en `.brain/`; la orquestación los resuelve desde `system-map.json`.
-5. **GitHub Issues es el canal de sincronización**; los tickets en Markdown son la representación local.
-6. **Cero tokens locales.** La autenticación GitHub se delega a `gh`; no se persisten PATs ni secretos en el repo.
-7. **Sanity-check es pre-flight.** `npm run sync` no publica nada si el sanity check detecta incoherencias.
-8. **Trazabilidad por ticket.** No hay cambios sin `TICK-XXX`, PR sin `Closes #...`, ni cierre sin `/complete` o `sync:pull`.
+The token is `base64url(payload).base64url(signature)` signed with Ed25519. The payload includes `plan: "enterprise"` (or `features: ["audit:*"]`) and `exp` in seconds. Validation is 100% local: no network calls and no embedded private keys. Without a valid license, `brain audit ...` is blocked and shows activation instructions.
 
-## Gobernanza y flujo rápido
+If you work from source, build before using the audits:
 
-- **`constitution.md`** — reglas fundamentales de la capa de orquestación: cero tokens locales, separación raíz/sidecars, sanity-check, trazabilidad, SDD y reglas de PR.
-- **`.github/PULL_REQUEST_TEMPLATE.md`** — plantilla compartida en la raíz y en cada sidecar con ticket, resumen, riesgos, rollback e impacto en specs.
-- **`/hotfix`** — flujo de emergencia: crea el ticket, prepara la rama `fix/TICK-XXX-slug`, exige declarar impacto en specs y sugiere el commit `fix(<módulo>): ...` sin saltarse la trazabilidad.
+```bash
+npm run build   # generates dist/ (included in the published package)
+```
+
+## Configuration
+
+- **`.brain/config.json`** — local workspace preferences, including `language: "en" | "es"`. `brain init` asks for the language and stores it here. It can also be set with `--lang en|es` or `BRAIN_LANG`.
+- **`.brainrc.json`** — local state: user, GitHub Project, default agent and last session. It is in `.gitignore`.
+- **`config/system-map.json`** — active topology: paths, roles (`provider`/`client`/`standalone`), stacks, domains, endpoints, schemas and relationships between sidecars. The base template is neutral (no sidecars); it is populated with `brain setup`. It is the structural source of truth.
+- **`config/system-map.example.json`** — populated reference map with provider/client/standalone sidecars. It is available in the source repository; copy it over `system-map.json` if you want to start from an example topology.
+- **`.brain/`** — in each repository: `active.json`, `templates/` and `features/<TICK-XXX>/` (`spec.md`, `plan.md`, `tasks.md`, `contract.md`, `analysis.md`). It is the SDD source of truth.
+- **`templates/brain/`** — EARS templates that the engine copies to `<repo>/.brain/templates/` in `init-work`. It contains `en/` (English, default), `es/` (Spanish) and `memory/` (central constitution in English).
+- **`templates/agents/`** — per-language distribution assets (`en/`, `es/`) for prompts, skills, commands and rules. `brain init`/`agents:sync` copy only those of the active language; the npm package no longer depends on development `.opencode/` or `.agents/`.
+- **`templates/i18n/`** — per-language validation packs (`en`, `es`) with ticket section names, API requirement patterns, delivery fields and security keywords.
+- **`templates/pr/`** — per-language pull request templates used by `brain pr` (`en/`, `es/`).
+- **`.brain/.gitignore`** — automatically generated with `active.json` to avoid versioning local state. `brain complete` and `brain reset` clear the active pointer.
+- **`.brain/memory/constitution.md`** — centralized ecosystem constitution. `brain init` and `brain setup` deploy it to the workspace if missing (never overwrite a customized one). `constitution-template.json` exposes the same rules in machine-readable form.
+- **`.agents/prompts/`** — analyst behavior (role, protocol, ticket format).
+- **`.agents/skills/`** — provisioned base skills (`brain-corp`, `sdd-brain`, `ticket-ops`).
+- **`.opencode/commands/`** — OpenCode slash commands provisioned for the workspace.
+
+## Principles
+
+1. **One root, never `cd`.** Everything runs from brain-corp; sidecar paths are resolved from `config/system-map.json`.
+2. **Analyze, do not implement.** brain-corp produces diagnostics and tickets, not sidecar changes.
+3. **Evidence over assumptions.** A resolver does not imply an exposed contract; a view does not imply a backend.
+4. **SDD is native and local.** Each repository keeps its spec and state in `.brain/`; orchestration resolves them from `system-map.json`.
+5. **GitHub Issues is the synchronization channel**; Markdown tickets are the local representation.
+6. **Zero local tokens.** GitHub authentication is delegated to `gh`; no PATs or secrets are persisted in the repo.
+7. **Sanity-check is pre-flight.** `npm run sync` publishes nothing if the sanity check detects inconsistencies.
+8. **Traceability per ticket.** No changes without `TICK-XXX`, no PR without `Closes #...`, no closure without `/complete` or `sync:pull`.
+
+## Governance and quick flow
+
+- **`constitution.md`** — repository governance rules: zero local tokens, root/sidecar separation, sanity-check, traceability, SDD and PR rules. It is part of the source repository, not the npm package.
+- **`.github/PULL_REQUEST_TEMPLATE.md`** — pull request template for the brain-corp repository itself. `brain pr` uses the bundled templates in `templates/pr/<lang>/` for user sidecars.
+- **`/hotfix`** — emergency flow: creates the ticket, prepares the `fix/TICK-XXX-slug` branch, requires declaring spec impact and suggests the `fix(<module>): ...` commit without skipping traceability.

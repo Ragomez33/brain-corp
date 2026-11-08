@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const path = require('node:path')
-const { t, resolveLanguage } = require('./lib/i18n')
+const { t } = require('./lib/i18n')
 
 const DIST = path.join(__dirname, '..', 'dist')
 const AUDIT_INDEX = path.join(DIST, 'modules', 'audit', 'index.js')
@@ -138,9 +138,8 @@ function main() {
     printReport(report)
   } catch (error) {
     if (error && error.name === 'LicenseError') {
-      const language = resolveLanguage()
-      console.error(`\n${auth.licenseHelpMessage(language)}`)
-      console.error(`${COLORS.yellow}${t('audit.licenseReason', { reason: error.message })}${COLORS.reset}\n`)
+      console.error(`\n${auth.licenseHelpMessage()}`)
+      console.error(`${COLORS.yellow}Reason: ${error.message}${COLORS.reset}\n`)
       process.exitCode = 2
       return
     }

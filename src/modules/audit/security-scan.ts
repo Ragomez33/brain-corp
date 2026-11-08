@@ -22,43 +22,60 @@ interface SecurityControl {
   label: string
 }
 
-const SECURITY_CONTROLS: SecurityControl[] = [
-  {
-    key: 'auth',
-    keyword: /(auth|autenticaci[oó]n|autorizaci[oó]n|permiso|rol(es)?|sesi[oó]n|jwt)/i,
-    control: /(auth|authoriz|permission|rbac|guard|jwt|session|role)/i,
-    severity: 'high',
-    label: 'autenticación/autorización'
-  },
-  {
-    key: 'validation',
-    keyword: /(validaci[oó]n|validar|sanitiz|escape|entrada|input)/i,
-    control: /(validat|sanitiz|escape|zod|joi|yup|class-validator|schema)/i,
-    severity: 'high',
-    label: 'validación de entrada'
-  },
-  {
-    key: 'injection',
-    keyword: /(inyecci[oó]n|sql|query|consulta|parametriz)/i,
-    control: /(parameteri[sz]ed|prepared|placeholder|\$\d+|prisma|knex|drizzle|query builder|escape)/i,
-    severity: 'critical',
-    label: 'prevención de inyección'
-  },
-  {
-    key: 'secrets',
-    keyword: /(secreto|secret|token|credencial|password|contrase[nñ]a)/i,
-    control: /(process\.env|config\.|vault|secret manager|env\[)/i,
-    severity: 'high',
-    label: 'manejo de secretos'
-  },
-  {
-    key: 'rate-limit',
-    keyword: /(rate.?limit|throttl|abuso|fuerza bruta)/i,
-    control: /(rate.?limit|throttl|limiter|slowdown)/i,
-    severity: 'medium',
-    label: 'rate limiting'
+const PACKAGE_ROOT = path.resolve(__dirname, '..', '..', '..')
+
+function escapeRegExp(value: string): string {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function securityControls(): SecurityControl[] {
+  const languages = ['en', 'es']
+  const merged = new Map<
+    string,
+    {
+      key: string
+      label: string
+      keywords: Set<string>
+      controls: Set<string>
+      severity: AuditFinding['severity']
+    }
+  >()
+
+  for (const language of languages) {
+    const file = path.join(PACKAGE_ROOT, 'templates', 'i18n', language, 'validation.json')
+    const pack = JSON.parse(fs.readFileSync(file, 'utf8')) as {
+      securityControls: Array<{
+        key: string
+        label: string
+        keywords: string[]
+        controls: string[]
+        severity: AuditFinding['severity']
+      }>
+    }
+
+    for (const control of pack.securityControls) {
+      const current = merged.get(control.key) || {
+        key: control.key,
+        label: control.label,
+        keywords: new Set<string>(),
+        controls: new Set<string>(),
+        severity: control.severity
+      }
+
+      control.keywords.forEach(keyword => current.keywords.add(keyword))
+      control.controls.forEach(item => current.controls.add(item))
+      merged.set(control.key, current)
+    }
   }
-]
+
+  return [...merged.values()].map(control => ({
+    key: control.key,
+    label: control.label,
+    severity: control.severity,
+    keyword: new RegExp(`(${[...control.keywords].map(escapeRegExp).join('|')})`, 'i'),
+    control: new RegExp(`(${[...control.controls].map(escapeRegExp).join('|')})`, 'i')
+  }))
+}
 
 interface Requirement {
   id: string
@@ -130,11 +147,11 @@ export function run(options: AuditOptions = {}): AuditReport {
       repoRoot: root,
       generatedAt: new Date().toISOString(),
       summary:
-        'No hay una feature activa con spec.md. Usa /init-work y /specify, o pasa --ticket <TICK-XXX>.',
+        'No active feature with spec.md. Run /init-work and /specify, or pass --ticket <TICK-XXX>.',
       findings: [
         {
           severity: 'info',
-          message: 'No se encontró spec activa para contrastar controles de seguridad.'
+          message: 'No active spec found to compare security controls.'
         }
       ],
       metrics: { repositories: entries.length, requirements: 0, findings: 0 }
@@ -145,10 +162,11 @@ export function run(options: AuditOptions = {}): AuditReport {
   const spec = readText(specPath)
   const requirements = parseRequirements(spec)
   const code = repositoryCode(context.repoDir)
+  const controls = securityControls()
   const findings: AuditFinding[] = []
 
   for (const requirement of requirements) {
-    const matchedControls = SECURITY_CONTROLS.filter(control => control.keyword.test(requirement.text))
+    const matchedControls = controls.filter(control => control.keyword.test(requirement.text))
     if (matchedControls.length === 0) continue
 
     for (const control of matchedControls) {
@@ -158,8 +176,8 @@ export function run(options: AuditOptions = {}): AuditReport {
         severity: control.severity,
         repo: context.repoId,
         file: toRelative(root, specPath),
-        message: `${requirement.id} exige ${control.label}, pero no se encontró un control correspondiente en el código.`,
-        detail: `Requisito: "${requirement.text.slice(0, 160)}".`
+        message: `${requirement.id} requires ${control.label}, but no corresponding control was found in the code.`,
+        detail: `Requirement: "${requirement.text.slice(0, 160)}".`
       })
     }
   }
@@ -173,8 +191,8 @@ export function run(options: AuditOptions = {}): AuditReport {
     generatedAt: new Date().toISOString(),
     summary:
       findings.length === 0
-        ? `Sin desvíos de seguridad detectados para ${context.ticketId}.`
-        : `${findings.length} desvío(s) de seguridad para ${context.ticketId}${critical + high > 0 ? `, ${critical + high} de severidad alta/crítica` : ''}.`,
+        ? `No security deviations detected for ${context.ticketId}.`
+        : `${findings.length} security deviation(s) for ${context.ticketId}${critical + high > 0 ? `, ${critical + high} high/critical severity` : ''}.`,
     findings,
     metrics: {
       ticket: context.ticketId,

@@ -16,7 +16,7 @@ function readActive(repoDir) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'))
   } catch (error) {
-    throw new Error(`No se pudo leer ${path.relative(repoDir, file)}: ${error.message}`)
+    throw new Error(`Could not read ${path.relative(repoDir, file)}: ${error.message}`)
   }
 }
 

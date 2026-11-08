@@ -1,28 +1,26 @@
 const path = require('node:path')
 const { listTickets } = require('./tickets')
 const {
+  getAllApiPatterns,
+  getRequiredTicketSections,
+  loadAllPacks
+} = require('./validation')
+const {
   getRegisteredRepositories,
   getTargetDomains,
   readSystemMap
 } = require('./system-map')
 
-const REQUIRED_SECTIONS = [
-  '## Contexto / Hallazgo',
-  '## Requerimientos Técnicos',
-  '## Impacto en la Arquitectura'
-]
+const REQUIRED_SECTIONS = getRequiredTicketSections()
+const REQUIRED_SECTION_GROUPS = loadAllPacks().map(pack => [
+  pack.ticketSections.context,
+  pack.ticketSections.requirements,
+  pack.ticketSections.architecture
+])
 const ID_PATTERN = /^TICK-\d{3}$/
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
-const API_REQUIREMENT_PATTERNS = [
-  /\b(falta|faltan)\s+(la\s+|el\s+|una\s+|un\s+)?(mutaci[oó]n|mutation|query|endpoint|resolver|migraci[oó]n)\b/i,
-  /\b(no existe|no existen|no hay)\s+(la\s+|el\s+|una\s+|un\s+)?(mutaci[oó]n|mutation|query|endpoint|resolver|migraci[oó]n)\b/i,
-  /\b(agregar|crear|exponer|añadir|anadir)\s+(la\s+|el\s+|una\s+|un\s+)?(mutaci[oó]n|mutation|query|endpoint|resolver|migraci[oó]n)\b/i,
-  /\b(cambio|modificaci[oó]n|actualizaci[oó]n)\b[^\n]{0,80}\b(schema\.prisma|schema\.gql|contrato graphql)\b/i,
-  /\bmodelo\s+prisma\s+sin\b/i,
-  /\b(mutaci[oó]n|mutation)\b[^\n]{0,40}\b(faltante|inexistente|no expuest[ao])\b/i,
-  /\b(query|endpoint|resolver)\b[^\n]{0,40}\b(faltante|inexistente|no expuest[ao])\b/i
-]
+const API_REQUIREMENT_PATTERNS = getAllApiPatterns().map(source => new RegExp(source, 'i'))
 
 function normalizeText(value) {
   return String(value || '')
@@ -98,58 +96,63 @@ function runSanityCheck() {
     const fileName = path.basename(ticket.filePath)
 
     if (!data.id) {
-      errors.push(`${fileName}: falta el campo obligatorio "id".`)
+      errors.push(`${fileName}: missing required field "id".`)
     } else if (!ID_PATTERN.test(String(data.id))) {
-      errors.push(`${fileName}: "id" inválido (${data.id}); se espera TICK-XXX.`)
+      errors.push(`${fileName}: "id" is invalid (${data.id}); expected TICK-XXX.`)
     }
 
-    if (!data.title) errors.push(`${fileName}: falta el campo obligatorio "title".`)
-    if (!data.author) errors.push(`${fileName}: falta el campo obligatorio "author".`)
+    if (!data.title) errors.push(`${fileName}: missing required field "title".`)
+    if (!data.author) errors.push(`${fileName}: missing required field "author".`)
     if (!data.target_domain) {
-      errors.push(`${fileName}: falta el campo obligatorio "target_domain".`)
+      errors.push(`${fileName}: missing required field "target_domain".`)
     } else if (!allowedDomains.has(data.target_domain)) {
       errors.push(
-        `${fileName}: "target_domain" inválido (${data.target_domain}); permitidos: ${[...allowedDomains].join(', ')}.`
+        `${fileName}: invalid "target_domain" (${data.target_domain}); allowed: ${[...allowedDomains].join(', ')}.`
       )
     }
 
     if (!data.status) {
-      errors.push(`${fileName}: falta el campo obligatorio "status".`)
+      errors.push(`${fileName}: missing required field "status".`)
     } else if (data.status !== ticket.dir) {
       errors.push(
-        `${fileName}: "status" (${data.status}) no coincide con la carpeta (${ticket.dir}).`
+        `${fileName}: "status" (${data.status}) does not match folder (${ticket.dir}).`
       )
     }
 
     if (!data.created_at) {
-      errors.push(`${fileName}: falta el campo obligatorio "created_at".`)
+      errors.push(`${fileName}: missing required field "created_at".`)
     } else if (!DATE_PATTERN.test(String(data.created_at))) {
-      errors.push(`${fileName}: "created_at" inválido (${data.created_at}); se espera YYYY-MM-DD.`)
+      errors.push(`${fileName}: "created_at" is invalid (${data.created_at}); expected YYYY-MM-DD.`)
     }
 
     if (data.dependencies === undefined) {
-      errors.push(`${fileName}: falta el campo obligatorio "dependencies".`)
+      errors.push(`${fileName}: missing required field "dependencies".`)
     } else if (!Array.isArray(data.dependencies)) {
-      errors.push(`${fileName}: "dependencies" debe ser una lista YAML.`)
+      errors.push(`${fileName}: "dependencies" must be a YAML list.`)
     }
 
     if (data.github_issue !== undefined) {
       const issue = Number(data.github_issue)
       if (!Number.isInteger(issue) || issue <= 0) {
-        errors.push(`${fileName}: "github_issue" inválido (${data.github_issue}).`)
+        errors.push(`${fileName}: "github_issue" is invalid (${data.github_issue}).`)
       }
     }
 
-    for (const section of REQUIRED_SECTIONS) {
-      if (!String(ticket.content || '').includes(section)) {
-        errors.push(`${fileName}: falta la sección obligatoria "${section}".`)
+    const content = String(ticket.content || '')
+    const hasCompleteSectionGroup = REQUIRED_SECTION_GROUPS.some(group =>
+      group.every(section => content.includes(section))
+    )
+
+    if (!hasCompleteSectionGroup) {
+      for (const section of REQUIRED_SECTIONS) {
+        errors.push(`${fileName}: missing required section "${section}".`)
       }
     }
 
     if (data.id) {
       if (byId.has(data.id)) {
         errors.push(
-          `${fileName}: "id" duplicado ${data.id}; también existe en ${path.basename(
+          `${fileName}: "id" duplicated ${data.id}; also exists in ${path.basename(
             byId.get(data.id).filePath
           )}.`
         )
@@ -158,11 +161,11 @@ function runSanityCheck() {
       }
 
       if (!fileName.startsWith(`${data.id}-`) && fileName !== `${data.id}.md`) {
-        warnings.push(`${fileName}: el nombre no comienza con el id ${data.id}.`)
+        warnings.push(`${fileName}: file name does not start with id ${data.id}.`)
       }
 
       if (fileNames.has(fileName)) {
-        errors.push(`${fileName}: nombre de archivo duplicado en el backlog.`)
+        errors.push(`${fileName}: duplicate file name in the backlog.`)
       } else {
         fileNames.set(fileName, ticket)
       }
@@ -172,7 +175,7 @@ function runSanityCheck() {
     if (normalizedTitle) {
       if (titles.has(normalizedTitle)) {
         warnings.push(
-          `${label}: título equivalente al de ${titles.get(normalizedTitle)}; revisar posible duplicado.`
+          `${label}: title is equivalent to ${titles.get(normalizedTitle)}; check for a possible duplicate.`
         )
       } else {
         titles.set(normalizedTitle, label)
@@ -191,17 +194,17 @@ function runSanityCheck() {
 
     for (const dep of deps) {
       if (!ID_PATTERN.test(dep)) {
-        errors.push(`${label}: dependencia con formato inválido "${dep}".`)
+        errors.push(`${label}: dependency has invalid format "${dep}".`)
         continue
       }
 
       if (dep === ticket.data.id) {
-        errors.push(`${label}: no puede depender de sí mismo.`)
+        errors.push(`${label}: cannot depend on itself.`)
         continue
       }
 
       if (!byId.has(dep)) {
-        errors.push(`${label}: la dependencia ${dep} no existe en ningún estado de tickets.`)
+        errors.push(`${label}: dependency ${dep} does not exist in any ticket state.`)
       }
     }
 
@@ -218,14 +221,14 @@ function runSanityCheck() {
 
       if (!hasProviderDependency) {
         errors.push(
-          `${label}: el ticket de un sidecar client requiere trabajo de API/backend pero no declara una dependencia a un ticket provider o shared.`
+          `${label}: a client sidecar ticket requires API/backend work but does not declare a dependency on a provider or shared ticket.`
         )
       }
     }
   }
 
   for (const cycle of detectCycles(byId, dependencies)) {
-    errors.push(`Ciclo de dependencias detectado: ${cycle.join(' -> ')}.`)
+    errors.push(`Dependency cycle detected: ${cycle.join(' -> ')}.`)
   }
 
   const ticketResults = tickets

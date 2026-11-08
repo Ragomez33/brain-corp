@@ -165,10 +165,10 @@ function analyzeRepository(root: string, repository: RepositoryEntry): {
       severity: orphans.length === info.exports.length ? 'medium' : 'low',
       repo: repository.id,
       file: toRelative(root, info.file),
-      message: `${orphans.length} export(s) sin referencias internas: ${orphans
+      message: `${orphans.length} export(s) without internal references: ${orphans
         .slice(0, 8)
         .join(', ')}${orphans.length > 8 ? '…' : ''}`,
-      detail: `Ahorro estimado de bundle: ~${estimated} bytes. Heurística: no detecta consumidores externos.`
+      detail: `Estimated bundle savings: ~${estimated} bytes. Heuristic: external consumers are not detected.`
     })
   }
 
@@ -206,8 +206,8 @@ export function run(options: AuditOptions = {}): AuditReport {
     generatedAt: new Date().toISOString(),
     summary:
       orphanSymbols === 0
-        ? 'No se detectaron exports huérfanos con la heurística interna.'
-        : `${orphanSymbols} export(s) potencialmente huérfanos en ${findings.length} archivo(s).`,
+        ? 'No orphan exports detected with the internal heuristic.'
+        : `${orphanSymbols} potentially orphan export(s) across ${findings.length} file(s).`,
     findings,
     metrics: {
       repositories: targets.length,

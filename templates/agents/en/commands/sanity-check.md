@@ -32,7 +32,7 @@ For each ticket verify, with real file and name evidence:
 2. **Client → API dependencies.** If a `client` or `standalone` ticket requires creating, modifying or exposing a query, mutation, endpoint, resolver or migration in a `provider` sidecar, it must declare at least one ticket for that `provider` or `shared` in `dependencies`. If none exists, create the missing provider ticket or add the dependency to the existing ticket.
 3. **Redundancies and duplicates.** Detect tickets with the same finding, scope or equivalent titles. If two tickets cover the same problem, keep the most complete, merge useful evidence from the other and remove the duplicate.
 4. **State and domain coherence.** `status` must match the folder; `target_domain` must be a registered id in `config/system-map.json` or `shared`; `dependencies` may only reference existing IDs and no cycles.
-5. **Body format.** The sections `## Contexto / Hallazgo`, `## Requerimientos Técnicos` and `## Impacto en la Arquitectura` must exist in that order.
+5. **Body format.** The sections `## Context / Finding`, `## Technical Requirements` and `## Architecture Impact` must exist in that order.
 6. **Ticket value.** Remove speculative tickets without verifiable evidence or whose content is already implemented. Do not delete tickets with a created `github_issue`: fix the ticket and report that the issue must be edited or closed manually.
 
 ## Step 3 — Fix

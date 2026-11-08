@@ -14,6 +14,7 @@ const {
   updateFrontmatter
 } = require('./lib/tickets')
 const { getTargetDomains } = require('./lib/system-map')
+const { getTicketSections } = require('./lib/validation')
 const { t } = require('./lib/i18n')
 
 const SYSTEM_MAP_PATH = path.join(ROOT_DIR, 'config', 'system-map.json')
@@ -150,37 +151,38 @@ function extractIssueNumber(output) {
 }
 
 function buildTicketBody({ title, context, specImpact, module, domain, repoRelative, branch }) {
+  const sections = getTicketSections()
   const impactLabel =
-    specImpact === 'none' ? 'none (sin spec gobernante afectada).' : specImpact
+    specImpact === 'none' ? t('ticket.hotfix.impactNone') : specImpact
 
   const contextText =
     context && context.trim()
       ? context.trim()
-      : 'Corrección urgente fuera del flujo SDD completo. El alcance debe mantenerse mínimo y verificable.'
+      : t('ticket.hotfix.defaultContext')
 
   return [
-    '## Contexto / Hallazgo',
+    sections.context,
     '',
-    `Hotfix de emergencia: ${title}.`,
+    t('ticket.hotfix.emergencyTitle', { title }),
     '',
     contextText,
     '',
-    `Impacto declarado en especificaciones: ${impactLabel}`,
+    t('ticket.hotfix.impactDeclared', { impact: impactLabel }),
     '',
-    '## Requerimientos Técnicos',
+    sections.requirements,
     '',
-    `- Registrar el cambio con commit \`fix(${module}): ${title}\`.`,
-    `- Trabajar en la rama \`${branch}\` del repositorio \`${repoRelative}\`.`,
-    '- Validar el cambio con los quality gates del sidecar (typecheck/build/tests).',
-    `- Impacto en especificaciones: ${impactLabel}`,
-    '- Si el cambio altera una spec existente, incluir la enmienda en el mismo PR.',
+    t('ticket.hotfix.requirementCommit', { module, title }),
+    t('ticket.hotfix.requirementBranch', { branch, repo: repoRelative }),
+    t('ticket.hotfix.requirementQuality'),
+    t('ticket.hotfix.requirementImpact', { impact: impactLabel }),
+    t('ticket.hotfix.requirementAmend'),
     '',
-    '## Impacto en la Arquitectura',
+    sections.architecture,
     '',
-    `- Dominio: \`${domain}\`.`,
-    `- Repositorio: \`${repoRelative}\`.`,
-    `- Rama: \`${branch}\`.`,
-    `- Alcance limitado al hotfix; cualquier extensión requiere ticket adicional.`
+    t('ticket.hotfix.architectureDomain', { domain }),
+    t('ticket.hotfix.architectureRepo', { repo: repoRelative }),
+    t('ticket.hotfix.architectureBranch', { branch }),
+    t('ticket.hotfix.architectureScope')
   ].join('\n')
 }
 

@@ -14,6 +14,7 @@ const {
   moveTicket
 } = require('./lib/tickets')
 const { getRegisteredRepositories, readSystemMap } = require('./lib/system-map')
+const { getTicketSections } = require('./lib/validation')
 const { t } = require('./lib/i18n')
 
 function describeDomainImpact(domain) {
@@ -126,26 +127,27 @@ function listPending({ json }) {
 }
 
 function buildNormalizedBody(text, domain) {
-  const context = text.trim() || '(Sin descripción proporcionada en el issue.)'
+  const sections = getTicketSections()
+  const context = text.trim() || t('ticket.normalize.noDescription')
 
-  return `## Contexto / Hallazgo
+  return `${sections.context}
 
 ${context}
 
-> _Ticket normalizado automáticamente por brain-corp. Pendiente de refinamiento por el Arquitecto Analista._
+${t('ticket.normalize.autoNote')}
 
-## Requerimientos Técnicos
+${sections.requirements}
 
-- Completar el análisis funcional del requerimiento descrito en el contexto.
-- Definir los contratos de datos, endpoints, queries o mutaciones afectados en \`${domain}\`.
-- Especificar validaciones, manejo de errores y criterios de aceptación verificables.
-- Identificar migraciones, compatibilidad y datos existentes que deban preservarse.
+${t('ticket.normalize.reqAnalysis')}
+${t('ticket.normalize.reqContracts', { domain })}
+${t('ticket.normalize.reqValidations')}
+${t('ticket.normalize.reqMigrations')}
 
-## Impacto en la Arquitectura
+${sections.architecture}
 
-- Repositorio objetivo: \`${domain}\`.
-- Capas afectadas: ${describeDomainImpact(domain)}
-- Revisar dependencias con otros sidecars y el impacto en aislamiento, datos y sincronización.
+${t('ticket.normalize.archRepo', { domain })}
+${t('ticket.normalize.archLayers', { layers: describeDomainImpact(domain) })}
+${t('ticket.normalize.archDependencies')}
 `
 }
 

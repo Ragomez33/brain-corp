@@ -36,7 +36,7 @@ function runGh(args, { rootDir = ROOT_DIR } = {}) {
     return {
       ok: false,
       status: result.status,
-      error: stderr || stdout || `El comando "gh ${args.join(' ')}" falló.`,
+      error: stderr || stdout || `Command "gh ${args.join(' ')}" failed.`,
       stdout,
       stderr
     }
@@ -94,7 +94,7 @@ function listGithubRepositories({ rootDir = ROOT_DIR, perPage = 100, owner = nul
   try {
     repositories = parseGhApiRepositories(result.stdout)
   } catch (error) {
-    throw new Error(`La salida de "gh api" no es JSON válido: ${error.message}`)
+    throw new Error(`"gh api" output is not valid JSON: ${error.message}`)
   }
 
   return repositories
@@ -150,12 +150,12 @@ function parseRepositoryInput(value, { rootDir = ROOT_DIR } = {}) {
 
   if (!fs.existsSync(localPath)) {
     throw new Error(
-      `No se encontró una URL de GitHub válida ni una ruta local existente: ${input}`
+      `No valid GitHub URL or existing local path found: ${input}`
     )
   }
 
   if (!fs.statSync(localPath).isDirectory()) {
-    throw new Error(`La ruta local no es un directorio: ${input}`)
+    throw new Error(`Local path is not a directory: ${input}`)
   }
 
   const name = path.basename(localPath)
@@ -232,7 +232,7 @@ function repositoryExists(repository, rootDir = ROOT_DIR) {
 }
 
 function cloneRepository({ repository, rootDir = ROOT_DIR } = {}) {
-  if (!repository) throw new Error('Falta el repositorio a clonar.')
+  if (!repository) throw new Error('Repository to clone is required.')
 
   if (repositoryExists(repository, rootDir)) {
     return { ok: true, skipped: true, path: repository.path }
@@ -242,7 +242,7 @@ function cloneRepository({ repository, rootDir = ROOT_DIR } = {}) {
     return {
       ok: false,
       skipped: false,
-      error: `"${repository.name}" no tiene owner/repositorio de GitHub; no se puede clonar con gh.`
+      error: `"${repository.name}" has no GitHub owner/repository; it cannot be cloned with gh.`
     }
   }
 
@@ -270,7 +270,7 @@ function cloneRepository({ repository, rootDir = ROOT_DIR } = {}) {
     error:
       result.status === 0
         ? null
-        : `El comando "gh repo clone" terminó con código ${result.status}.`
+        : `"gh repo clone" exited with code ${result.status}.`
   }
 }
 

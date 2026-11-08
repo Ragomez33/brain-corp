@@ -5,8 +5,8 @@ function quoteArg(value) {
     if (arg === '') return '""'
     if (!/[\s"&|<>^()%!]/.test(arg)) return arg
 
-    // Reglas de CommandLineToArgvW: duplica las barras previas a una comilla
-    // y las barras finales del argumento.
+    // CommandLineToArgvW rules: double backslashes before a quote
+    // and trailing backslashes at the end of the argument.
     const escaped = arg
       .replace(/(\\*)"/g, '$1$1\\"')
       .replace(/(\\+)$/, '$1$1')

@@ -47,14 +47,14 @@ github_issue: <number>
 ```
 
 - Body with the three mandatory sections:
-  - `## Contexto / Hallazgo`: keep the user's original text and clarify the problem.
-  - `## Requerimientos Técnicos`: concrete requirements, contracts, endpoints/mutations, validations and acceptance criteria.
-  - `## Impacto en la Arquitectura`: affected repositories, layers, data, multi-tenancy and dependencies.
+  - `## Context / Finding`: keep the user's original text and clarify the problem.
+  - `## Technical Requirements`: concrete requirements, contracts, endpoints/mutations, validations and acceptance criteria.
+  - `## Architecture Impact`: affected repositories, layers, data, multi-tenancy and dependencies.
 
 Rules:
 
 - Do not invent business information. If critical data is missing, write an explicit assumption or ask.
-- Do not delete the original content: integrate it into Contexto/Hallazgo.
+- Do not delete the original content: integrate it into Context/Finding.
 - Preserve `github_issue` if present.
 - Keep the ticket in `.agents/tickets/backlog/` with `status: "backlog"`.
 

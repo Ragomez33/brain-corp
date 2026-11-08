@@ -1,0 +1,58 @@
+{
+  "language": "es",
+  "ticketSections": {
+    "context": "## Contexto / Hallazgo",
+    "requirements": "## Requerimientos Técnicos",
+    "architecture": "## Impacto en la Arquitectura",
+    "delivery": "## Entrega"
+  },
+  "deliveryFields": {
+    "pr": "- PR:",
+    "completed": "- Completado:"
+  },
+  "apiRequirementPatterns": [
+    "\\b(falta|faltan)\\s+(la\\s+|el\\s+|una\\s+|un\\s+)?(mutaci[oó]n|mutation|query|endpoint|resolver|migraci[oó]n)\\b",
+    "\\b(no existe|no existen|no hay)\\s+(la\\s+|el\\s+|una\\s+|un\\s+)?(mutaci[oó]n|mutation|query|endpoint|resolver|migraci[oó]n)\\b",
+    "\\b(agregar|crear|exponer|añadir|anadir)\\s+(la\\s+|el\\s+|una\\s+|un\\s+)?(mutaci[oó]n|mutation|query|endpoint|resolver|migraci[oó]n)\\b",
+    "\\b(cambio|modificaci[oó]n|actualizaci[oó]n)\\b[^\\n]{0,80}\\b(schema\\.prisma|schema\\.gql|contrato graphql)\\b",
+    "\\b(mutaci[oó]n|mutation)\\b[^\\n]{0,40}\\b(faltante|inexistente|no expuest[ao])\\b",
+    "\\b(query|endpoint|resolver)\\b[^\\n]{0,40}\\b(faltante|inexistente|no expuest[ao])\\b"
+  ],
+  "securityControls": [
+    {
+      "key": "auth",
+      "label": "authentication/authorization",
+      "keywords": ["auth", "autenticación", "autenticacion", "autorización", "autorizacion", "permiso", "rol", "roles", "sesión", "sesion", "jwt"],
+      "controls": ["auth", "authoriz", "autoriz", "permission", "permiso", "rbac", "guard", "jwt", "session", "role", "rol"],
+      "severity": "high"
+    },
+    {
+      "key": "validation",
+      "label": "input validation",
+      "keywords": ["validación", "validacion", "validar", "sanitizar", "sanitiz", "escape", "entrada", "input"],
+      "controls": ["validat", "validar", "sanitiz", "escape", "zod", "joi", "yup", "class-validator", "schema"],
+      "severity": "high"
+    },
+    {
+      "key": "injection",
+      "label": "injection prevention",
+      "keywords": ["inyección", "inyeccion", "sql", "query", "consulta", "parametrizar", "parametriz"],
+      "controls": ["parameterized", "prepared", "placeholder", "prisma", "knex", "drizzle", "query builder", "escape", "parametriz"],
+      "severity": "critical"
+    },
+    {
+      "key": "secrets",
+      "label": "secret handling",
+      "keywords": ["secreto", "secret", "token", "credencial", "password", "contraseña", "contrasena"],
+      "controls": ["process.env", "config.", "vault", "secret manager", "env["],
+      "severity": "high"
+    },
+    {
+      "key": "rate-limit",
+      "label": "rate limiting",
+      "keywords": ["rate limit", "throttl", "abuso", "fuerza bruta"],
+      "controls": ["rate limit", "rate-limit", "throttl", "limiter", "slowdown"],
+      "severity": "medium"
+    }
+  ]
+}

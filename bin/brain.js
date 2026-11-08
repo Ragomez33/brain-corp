@@ -15,6 +15,7 @@ const COMMANDS = {
   setup: { script: 'scripts/setup-wizard.js', descriptionKey: 'bin.cmd.setup' },
   'agents:sync': { script: 'scripts/sync-agents.js', descriptionKey: 'bin.cmd.agentsSync' },
   reset: { script: 'scripts/reset.js', descriptionKey: 'bin.cmd.reset' },
+  pr: { script: 'scripts/create-pr.js', descriptionKey: 'bin.cmd.pr' },
   audit: { script: 'scripts/audit.js', descriptionKey: 'bin.cmd.audit' },
   'init-work': { script: 'scripts/sdd.js', prepend: ['init-work'], descriptionKey: 'bin.cmd.initWork' },
   specify: { script: 'scripts/sdd.js', prepend: ['specify'], descriptionKey: 'bin.cmd.specify' },
@@ -60,12 +61,12 @@ function runScript(script, args) {
   const scriptPath = path.join(ROOT_DIR, script)
 
   if (!fs.existsSync(scriptPath)) {
-    fail(`No se encontró el script ${script}.`)
+    fail(`Script not found: ${script}.`)
   }
 
   const result = spawnSync(buildNodeCommand(scriptPath, args), {
     // El workspace es el directorio desde el que el usuario invoca `brain`,
-    // no la carpeta donde está instalado el paquete.
+    // not the folder where the package is installed.
     cwd: process.cwd(),
     stdio: 'inherit',
     env: process.env,

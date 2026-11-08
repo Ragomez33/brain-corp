@@ -1,7 +1,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 
-// La raíz del workspace es el cwd del usuario; los scripts viven en el paquete.
+// The workspace root is the user's cwd; scripts live in the package.
 const ROOT_DIR = process.cwd()
 const ROLES = ['provider', 'client', 'standalone']
 
@@ -15,19 +15,18 @@ function createNeutralMap() {
     generatedAt: new Date().toISOString().slice(0, 10),
     root: '.',
     description:
-      'Mapa de topología del ecosistema brain-corp. Registra aquí los repositorios/sidecars que orquesta este workspace.',
+      'Ecosystem topology map for brain-corp. Register the repositories/sidecars orchestrated by this workspace.',
     repositories: [],
     relationships: [],
     topology: {
-      pattern: 'monorepo-contenedor con git submodules',
-      gitmodules: '.gitmodules',
+      pattern: 'multi-repository workspace',
       groups: []
     },
     rootOrchestration: {
       enabled: true,
       root: '.',
-      rule: 'Todos los comandos y skills operan desde la raíz de brain-corp. Las rutas de los sidecars se resuelven desde config/system-map.json; nunca se requiere cambiar de directorio.',
-      pathResolution: 'repositories[].path (relativo a la raíz)',
+      rule: 'All commands and skills operate from the brain-corp root. Sidecar paths are resolved from config/system-map.json; changing directories is never required.',
+      pathResolution: 'repositories[].path (relative to root)',
       neverCd: true
     },
     domains: {},
@@ -83,7 +82,7 @@ function readSystemMap(rootDir = ROOT_DIR) {
   try {
     parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'))
   } catch (error) {
-    throw new Error(`No se pudo leer config/system-map.json: ${error.message}`)
+    throw new Error(`Could not read config/system-map.json: ${error.message}`)
   }
 
   return normalizeMap(parsed)
@@ -141,19 +140,19 @@ function slugify(value) {
 
 function normalizeRepositoryPath(rootDir, value, fallback = '') {
   const raw = String(value || fallback || '').trim()
-  if (!raw) throw new Error('La ruta del sidecar es obligatoria.')
+  if (!raw) throw new Error('Sidecar path is required.')
 
   if (path.isAbsolute(raw)) {
     const relative = path.relative(rootDir, raw).replace(/\\/g, '/')
     if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
-      throw new Error('La ruta debe estar dentro de la raíz de brain-corp.')
+      throw new Error('Path must be inside the brain-corp root.')
     }
     return relative
   }
 
   const normalized = path.posix.normalize(raw.replace(/\\/g, '/').replace(/^\.\//, ''))
   if (normalized === '.' || normalized === '..' || normalized.startsWith('../')) {
-    throw new Error('La ruta debe ser relativa y permanecer dentro de brain-corp.')
+    throw new Error('Path must be relative and stay inside brain-corp.')
   }
 
   return normalized
@@ -161,11 +160,11 @@ function normalizeRepositoryPath(rootDir, value, fallback = '') {
 
 function createRepository({ name, role, path: repositoryPath, rootDir = ROOT_DIR }) {
   const cleanName = String(name || '').trim()
-  if (!cleanName) throw new Error('El nombre del sidecar es obligatorio.')
+  if (!cleanName) throw new Error('Sidecar name is required.')
 
   const normalizedRole = normalizeRole(role)
   if (!normalizedRole) {
-    throw new Error('El rol debe ser provider, client o standalone.')
+    throw new Error('Role must be provider, client or standalone.')
   }
 
   const id = slugify(cleanName)
