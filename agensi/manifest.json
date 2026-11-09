@@ -1,0 +1,72 @@
+{
+  "name": "brain-corp-agent-skills",
+  "displayName": "brain-corp Agent Skills",
+  "version": "1.0.0",
+  "description": "Official Agensi skill pack for orchestrating multi-repository SDD and ticket workflows with @rgkoko/brain-corp.",
+  "publisher": "Ragomez33",
+  "license": "MIT",
+  "homepage": "https://github.com/Ragomez33/brain-corp",
+  "docs": "https://github.com/Ragomez33/brain-corp#readme",
+  "agensi": {
+    "type": "skill-pack",
+    "entry": "README.md",
+    "skillsDir": "skills",
+    "sharedDir": "shared"
+  },
+  "engine": {
+    "package": "@rgkoko/brain-corp",
+    "version": "1.1.2",
+    "bin": "brain",
+    "fallback": "npx @rgkoko/brain-corp@1.1.2"
+  },
+  "skills": [
+    {
+      "name": "brain-corp-setup",
+      "path": "skills/brain-corp-setup/SKILL.md",
+      "description": "Set up a brain-corp workspace, register sidecars and initialize the CLI session."
+    },
+    {
+      "name": "brain-corp-analysis",
+      "path": "skills/brain-corp-analysis/SKILL.md",
+      "description": "Analyze the ecosystem and create actionable tickets from integration gaps."
+    },
+    {
+      "name": "brain-corp-sdd",
+      "path": "skills/brain-corp-sdd/SKILL.md",
+      "description": "Run the native Spec-Driven Development flow for a ticket."
+    },
+    {
+      "name": "brain-corp-ticket-ops",
+      "path": "skills/brain-corp-ticket-ops/SKILL.md",
+      "description": "Import, normalize, validate, sync, close and hotfix tickets."
+    },
+    {
+      "name": "brain-corp-pr",
+      "path": "skills/brain-corp-pr/SKILL.md",
+      "description": "Create a pull request from a ticket with the bundled EN/ES template."
+    }
+  ],
+  "requirements": {
+    "node": ">=18",
+    "npm": true,
+    "git": true,
+    "gh": true,
+    "network": true
+  },
+  "languageBoundary": {
+    "engine": "en",
+    "artifacts": "workspace language (en | es)",
+    "config": ".brain/config.json"
+  },
+  "keywords": [
+    "brain-corp",
+    "sdd",
+    "spec-driven-development",
+    "multi-repo",
+    "tickets",
+    "github-issues",
+    "orchestration",
+    "pull-requests",
+    "ears"
+  ]
+}
