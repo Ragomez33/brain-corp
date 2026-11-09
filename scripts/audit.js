@@ -5,7 +5,6 @@ const { t } = require('./lib/i18n')
 
 const DIST = path.join(__dirname, '..', 'dist')
 const AUDIT_INDEX = path.join(DIST, 'modules', 'audit', 'index.js')
-const AUTH = path.join(DIST, 'middleware', 'auth.js')
 
 const COLORS = {
   reset: '\u001b[0m',
@@ -107,11 +106,9 @@ function main() {
   }
 
   let audit
-  let auth
 
   try {
     audit = require(AUDIT_INDEX)
-    auth = require(AUTH)
   } catch (error) {
     fail(t('audit.buildMissing', { error: error.message }))
   }
@@ -124,7 +121,7 @@ function main() {
   }
 
   try {
-    const { report } = audit.runAudit(args.name, {
+    const report = audit.runAudit(args.name, {
       root: args.root,
       repo: args.repo,
       ticket: args.ticket
@@ -137,13 +134,6 @@ function main() {
 
     printReport(report)
   } catch (error) {
-    if (error && error.name === 'LicenseError') {
-      console.error(`\n${auth.licenseHelpMessage()}`)
-      console.error(`${COLORS.yellow}Reason: ${error.message}${COLORS.reset}\n`)
-      process.exitCode = 2
-      return
-    }
-
     fail(error.message)
   }
 }

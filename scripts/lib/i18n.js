@@ -19,7 +19,7 @@ const MESSAGES = {
     'bin.cmd.agentsSync': 'Redeploy agent assets and commands.',
     'bin.cmd.reset': 'Clear the active feature state of a repository.',
     'bin.cmd.pr': 'Create a pull request from a ticket using the bundled template.',
-    'bin.cmd.audit': 'Enterprise audits (license required).',
+    'bin.cmd.audit': 'Native repository audits.',
     'bin.cmd.initWork': 'Initialize an SDD feature in .brain/.',
     'bin.cmd.specify': 'Generate spec.md (EARS).',
     'bin.cmd.plan': 'Generate plan.md.',
@@ -123,12 +123,12 @@ Options:
     'sdd.analysisMetrics': '[sdd] Requirements: {requirements} · tasks: {done}/{total} completed.',
     'sdd.analysisReport': '[sdd] Report: {file}',
 
-    'audit.help': `brain-corp · Enterprise audits
+    'audit.help': `brain-corp · Audits
 
 Usage:
   brain audit <audit> [options]
 
-Audits (require Enterprise license):
+Audits:
   dead-code       Detect orphan exports and estimate bundle savings.
   debt-radar      TODO/FIXME/any markers with git age and cross-sidecar friction.
   contract-guard  Prevent breaking changes in schemas and contract.md.
@@ -139,13 +139,9 @@ Options:
   --repo <id>      Limit the audit to a system-map repository.
   --ticket <id>    security-scan: use a specific feature.
   --json           Emit the report as JSON.
-  --help           Show this help.
-
-License activation:
-  export BRAIN_LICENSE_TOKEN="<payload>.<signature>"
-  or set { "enterpriseLicense": "..." } in ~/.brain/config.json`,
+  --help           Show this help.`,
     'audit.unknown': 'Unknown audit: {name}',
-    'audit.buildMissing': 'Enterprise build not found in dist/. Run "npm run build". ({error})',
+    'audit.buildMissing': 'Audit build not found in dist/. Run "npm run build". ({error})',
     'audit.noFindings': 'No findings.',
     'audit.missingValue': 'Missing value for {option}',
     'audit.unknownOption': 'Unknown option: {option}',
@@ -448,7 +444,7 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'bin.cmd.agentsSync': 'Re-desplegar assets y comandos del motor de agente.',
     'bin.cmd.reset': 'Vaciar el estado activo de un repositorio.',
     'bin.cmd.pr': 'Crear un pull request desde un ticket con la plantilla incluida.',
-    'bin.cmd.audit': 'Auditorías Enterprise (requiere licencia).',
+    'bin.cmd.audit': 'Auditorías nativas del repositorio.',
     'bin.cmd.initWork': 'Inicializar una feature SDD en .brain/.',
     'bin.cmd.specify': 'Generar spec.md (EARS).',
     'bin.cmd.plan': 'Generar plan.md.',
@@ -552,12 +548,12 @@ Opciones:
     'sdd.analysisMetrics': '[sdd] Requisitos: {requirements} · tareas: {done}/{total} completadas.',
     'sdd.analysisReport': '[sdd] Reporte: {file}',
 
-    'audit.help': `brain-corp · Auditorías Enterprise
+    'audit.help': `brain-corp · Auditorías
 
 Uso:
   brain audit <auditoría> [opciones]
 
-Auditorías (requieren licencia Enterprise):
+Auditorías:
   dead-code       Detecta exports huérfanos y estima ahorro de bundle.
   debt-radar      Marcadores TODO/FIXME/any con antigüedad git y fricción entre sidecars.
   contract-guard  Previene breaking changes en esquemas y contract.md.
@@ -568,13 +564,9 @@ Opciones:
   --repo <id>      Limita la auditoría a un repositorio del system-map.
   --ticket <id>    security-scan: usa una feature concreta.
   --json           Emite el reporte en JSON.
-  --help           Muestra esta ayuda.
-
-Activación de licencia:
-  export BRAIN_LICENSE_TOKEN="<payload>.<firma>"
-  o define { "enterpriseLicense": "..." } en ~/.brain/config.json`,
+  --help           Muestra esta ayuda.`,
     'audit.unknown': 'Auditoría desconocida: {name}',
-    'audit.buildMissing': 'No se encontró el build Enterprise en dist/. Ejecuta "npm run build". ({error})',
+    'audit.buildMissing': 'No se encontró el build de auditorías en dist/. Ejecuta "npm run build". ({error})',
     'audit.noFindings': 'Sin hallazgos.',
     'audit.missingValue': 'Falta el valor para {option}',
     'audit.unknownOption': 'Opción desconocida: {option}',

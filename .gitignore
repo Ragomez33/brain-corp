@@ -30,7 +30,3 @@ out/
 # Agentes locales generados por el CLI (fuente canónica: templates/agents/)
 .agents/
 .opencode/
-
-# Claves de firma de licencias (nunca versionar)
-license-keys/
-brain-license-*.pem

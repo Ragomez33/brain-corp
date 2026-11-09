@@ -66,7 +66,7 @@ See `shared/language-boundary.md` for the full rule set.
 - The CLI must be executable on the buyer's machine via `npx` or a global install.
 - Interactive commands such as `brain setup` and `brain init` require user input; the agent must not invent answers.
 - GitHub workflows require a valid `gh` session.
-- Enterprise audit commands require a valid Ed25519 Enterprise license configured for the workspace.
+- Audit commands run natively for any user; no license or activation step is required.
 
 ## Support
 

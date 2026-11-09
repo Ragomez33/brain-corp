@@ -1,4 +1,3 @@
-import { requireEnterpriseLicense, type LicenseInfo } from '../../middleware/auth'
 import * as contractGuard from './contract-guard'
 import * as deadCode from './dead-code'
 import * as debtRadar from './debt-radar'
@@ -28,8 +27,6 @@ const RUNNERS: Record<AuditName, (options: AuditOptions) => AuditReport> = {
 export function runAudit(
   name: AuditName,
   options: AuditOptions = {}
-): { report: AuditReport; license: LicenseInfo } {
-  const license = requireEnterpriseLicense()
-  const report = RUNNERS[name](options)
-  return { report, license }
+): AuditReport {
+  return RUNNERS[name](options)
 }
