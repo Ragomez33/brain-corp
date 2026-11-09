@@ -33,11 +33,11 @@ gh auth status
 If `brain` is missing, use the pinned fallback:
 
 ```bash
-npx @rgkoko/brain-corp@1.1.2 setup
-npx @rgkoko/brain-corp@1.1.2 init
+npx @rgkoko/brain-corp@2.0.0 setup
+npx @rgkoko/brain-corp@2.0.0 init
 ```
 
-Only run `npm install -g @rgkoko/brain-corp@1.1.2` if the user explicitly approves a global install.
+Only run `npm install -g @rgkoko/brain-corp@2.0.0` if the user explicitly approves a global install.
 
 If `gh auth status` fails, ask the user to run `gh auth login` and stop until it succeeds.
 

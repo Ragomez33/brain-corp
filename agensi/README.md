@@ -1,8 +1,8 @@
 # brain-corp Agent Skills
 
-An official skill pack for **brain-corp**, the orchestration CLI for multi-repository ecosystems. The pack teaches an agent how to drive the published `@rgkoko/brain-corp@1.1.2` engine through onboarding, Spec-Driven Development, ticket operations and pull request creation.
+An official skill pack for **brain-corp**, the orchestration CLI for multi-repository ecosystems. The pack teaches an agent how to drive the published `@rgkoko/brain-corp@2.0.0` engine through onboarding, Spec-Driven Development, ticket operations and pull request creation.
 
-- **Engine:** [`@rgkoko/brain-corp@1.1.2`](https://www.npmjs.com/package/@rgkoko/brain-corp)
+- **Engine:** [`@rgkoko/brain-corp@2.0.0`](https://www.npmjs.com/package/@rgkoko/brain-corp)
 - **Source:** [github.com/Ragomez33/brain-corp](https://github.com/Ragomez33/brain-corp)
 - **License:** MIT
 
@@ -27,13 +27,13 @@ An official skill pack for **brain-corp**, the orchestration CLI for multi-repos
 The skills check for the `brain` binary and fall back to:
 
 ```bash
-npx @rgkoko/brain-corp@1.1.2 <command>
+npx @rgkoko/brain-corp@2.0.0 <command>
 ```
 
 Global installation is only suggested after user approval:
 
 ```bash
-npm install -g @rgkoko/brain-corp@1.1.2
+npm install -g @rgkoko/brain-corp@2.0.0
 ```
 
 ## Usage

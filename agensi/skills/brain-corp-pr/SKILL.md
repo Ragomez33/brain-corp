@@ -24,7 +24,7 @@ brain --version
 gh auth status
 ```
 
-If `brain` is missing, use `npx @rgkoko/brain-corp@1.1.2 pr ...`.
+If `brain` is missing, use `npx @rgkoko/brain-corp@2.0.0 pr ...`.
 
 Confirm:
 

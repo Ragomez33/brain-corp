@@ -25,7 +25,7 @@ command -v brain
 brain --version
 ```
 
-If missing, use `npx @rgkoko/brain-corp@1.1.2 <command>`.
+If missing, use `npx @rgkoko/brain-corp@2.0.0 <command>`.
 
 The ticket must exist in `.agents/tickets/<state>/TICK-XXX-*.md`.
 

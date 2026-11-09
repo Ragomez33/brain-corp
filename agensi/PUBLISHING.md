@@ -48,7 +48,7 @@ Suggested values:
 
 Before submitting:
 
-- [ ] `brain --version` or `npx @rgkoko/brain-corp@1.1.2 --version` is verified.
+- [ ] `brain --version` or `npx @rgkoko/brain-corp@2.0.0 --version` is verified.
 - [ ] Every `SKILL.md` starts with valid YAML frontmatter and has `name` and `description`.
 - [ ] The pack contains no credentials, tokens, private keys or absolute user paths.
 - [ ] The CLI version in the skills matches the published npm version.

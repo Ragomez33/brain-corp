@@ -3,7 +3,7 @@
 These skills use the published npm package as the execution engine:
 
 - Package: `@rgkoko/brain-corp`
-- Pinned version: `1.1.2`
+- Pinned version: `2.0.0`
 - Binary: `brain`
 - Requires: Node.js >= 18, npm/npx, git, and `gh` for GitHub workflows.
 
@@ -19,20 +19,20 @@ brain --version
 If `brain` is missing, prefer the pinned `npx` fallback:
 
 ```bash
-npx @rgkoko/brain-corp@1.1.2 <command> [options]
+npx @rgkoko/brain-corp@2.0.0 <command> [options]
 ```
 
 Examples:
 
 ```bash
-npx @rgkoko/brain-corp@1.1.2 setup
-npx @rgkoko/brain-corp@1.1.2 init-work TICK-001
+npx @rgkoko/brain-corp@2.0.0 setup
+npx @rgkoko/brain-corp@2.0.0 init-work TICK-001
 ```
 
 Only install globally after explicit user approval:
 
 ```bash
-npm install -g @rgkoko/brain-corp@1.1.2
+npm install -g @rgkoko/brain-corp@2.0.0
 ```
 
 Never install a different or unpinned version unless the user asks for it.

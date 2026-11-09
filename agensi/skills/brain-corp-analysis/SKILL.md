@@ -25,7 +25,7 @@ command -v brain
 brain --version
 ```
 
-If `brain` is missing, use `npx @rgkoko/brain-corp@1.1.2 <command>`.
+If `brain` is missing, use `npx @rgkoko/brain-corp@2.0.0 <command>`.
 
 Ensure the workspace assets exist:
 
