@@ -7,6 +7,12 @@ const readline = require('node:readline/promises')
 const { buildCommand, buildNodeCommand } = require('./lib/shell')
 const { confirm, isInteractiveTerminal, promptSelection } = require('./lib/prompts')
 const { provisionAgentAssets } = require('./lib/agent-provision')
+const { hydrateSidecars } = require('./lib/hydrate')
+const {
+  checkCliForUpdate,
+  installUpdate,
+  isUpdateCheckDisabled
+} = require('./lib/update-check')
 const {
   getRegisteredRepositories,
   readSystemMap,
@@ -75,6 +81,57 @@ async function chooseLanguage(rl) {
 function fail(message) {
   console.error(`\n[init-brain] ${message}`)
   process.exit(1)
+}
+
+async function maybeOfferUpdate(rl, updateCheck) {
+  let result
+
+  try {
+    result = await updateCheck
+  } catch {
+    // The update check is optional and must never interrupt init.
+    return
+  }
+
+  if (!result || !result.updateAvailable) return
+
+  console.log(
+    t('update.available', {
+      current: result.currentVersion,
+      latest: result.latestVersion
+    })
+  )
+
+  if (!isInteractiveTerminal()) {
+    console.log(t('update.commandHint', { command: result.installCommand }))
+    return
+  }
+
+  const accepted = await confirm(
+    rl,
+    t('update.prompt', { latest: result.latestVersion }),
+    false
+  )
+
+  if (!accepted) {
+    console.log(t('update.skipped'))
+    return
+  }
+
+  console.log(t('update.installing', { latest: result.latestVersion }))
+
+  const installed = installUpdate({
+    packageName: result.packageName,
+    version: result.latestVersion
+  })
+
+  if (installed.ok) {
+    console.log(t('update.installed', { latest: result.latestVersion }))
+    return
+  }
+
+  console.warn(t('update.failed', { error: installed.error }))
+  console.log(t('update.commandHint', { command: result.installCommand }))
 }
 
 function runGh(args, { allowFailure = false } = {}) {
@@ -482,11 +539,17 @@ function launchAgent(config) {
 }
 
 async function main() {
+  // Start the NPM check immediately but never block the init flow on it.
+  const updateCheck = isUpdateCheckDisabled()
+    ? Promise.resolve(null)
+    : checkCliForUpdate()
+
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
   let config
 
   try {
     await chooseLanguage(rl)
+    await maybeOfferUpdate(rl, updateCheck)
 
     const manualSetup = process.argv.includes('--manual')
     const mapPath = systemMapPath(ROOT_DIR)
@@ -509,6 +572,15 @@ async function main() {
       if (!hasValidSidecars(systemMap)) {
         throw new Error(t('init.sidecarsMissing'))
       }
+    }
+
+    // Auto-hydration: on a fresh clone of the container repo, sidecars may be
+    // registered in the topology map but absent on disk. Clone only what is
+    // missing; already initialized repositories are never overwritten.
+    const hydration = hydrateSidecars({ rootDir: ROOT_DIR, map: systemMap })
+
+    if (hydration.failed > 0) {
+      console.warn(t('init.hydrateFailed', { failed: hydration.failed }))
     }
 
     runSyncPull()

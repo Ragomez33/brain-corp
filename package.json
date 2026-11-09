@@ -45,6 +45,7 @@
     "audit": "node scripts/audit.js",
     "setup": "node scripts/setup-wizard.js",
     "init-brain": "node scripts/init-brain.js",
+    "hydrate": "node scripts/hydrate.js",
     "agents:sync": "node scripts/sync-agents.js",
     "reset": "node scripts/reset.js",
     "pr": "node scripts/create-pr.js",

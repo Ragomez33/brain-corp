@@ -30,7 +30,8 @@ const COMMANDS = {
   watch: { script: 'scripts/watch-github.js', descriptionKey: 'bin.cmd.watch' },
   normalize: { script: 'scripts/normalize-ticket.js', descriptionKey: 'bin.cmd.normalize' },
   complete: { script: 'scripts/complete-ticket.js', descriptionKey: 'bin.cmd.complete' },
-  hotfix: { script: 'scripts/hotfix.js', descriptionKey: 'bin.cmd.hotfix' }
+  hotfix: { script: 'scripts/hotfix.js', descriptionKey: 'bin.cmd.hotfix' },
+  hydrate: { script: 'scripts/hydrate.js', descriptionKey: 'bin.cmd.hydrate' }
 }
 
 function readVersion() {

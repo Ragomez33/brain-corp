@@ -34,6 +34,7 @@ const MESSAGES = {
     'bin.cmd.normalize': 'Normalize imported tickets.',
     'bin.cmd.complete': 'Close a ticket delivery.',
     'bin.cmd.hotfix': 'Create an emergency ticket.',
+    'bin.cmd.hydrate': 'Clone and hydrate missing sidecars from the topology map.',
 
     'init.agentsHeading': 'Agent CLI engine for this session',
     'init.customAgentPrompt': 'Custom agent name',
@@ -46,6 +47,18 @@ const MESSAGES = {
     'init.projectWarning': '  Warning: could not verify the Project (missing "project" scope?). It will be saved anyway.',
     'init.syncPull': 'Syncing tickets from GitHub (sync-pull)...',
     'init.syncPullFailed': '[init-brain] sync-pull could not complete. Continuing with local state.',
+    'init.hydrateFailed': '[init-brain] {failed} sidecar(s) could not be hydrated. Review the errors above and retry with "brain hydrate".',
+    'hydrate.heading': '[hydrate] Hydrating sidecars from config/system-map.json...',
+    'hydrate.empty': '[hydrate] No sidecars registered; nothing to hydrate.',
+    'hydrate.skipped': '  [skip] {repo}: already initialized at {path}.',
+    'hydrate.cloning': '  [clone] {repo} -> {path}',
+    'hydrate.cloned': '  [ok] {repo} cloned successfully.',
+    'hydrate.failed': '  [error] {repo} could not be hydrated: {error}',
+    'hydrate.summary': '[hydrate] {cloned} cloned, {skipped} skipped, {failed} failed.',
+    'hydrate.pathMissing': 'The repository has no "path" configured in config/system-map.json.',
+    'hydrate.pathOutsideRoot': 'Sidecar path "{path}" must stay inside the brain-corp root.',
+    'hydrate.noRemote': 'Sidecar "{repo}" has no "remote" or "sshUrl" to clone from.',
+    'hydrate.gitFailed': '"git clone" exited with code {status}.',
     'init.watcherActive': 'Watcher already active (PID {pid}).',
     'init.watcherPrompt': 'Enable real-time watcher (every 45s)?',
     'init.watcherOff': 'Watcher not enabled.',
@@ -79,6 +92,14 @@ const MESSAGES = {
     'init.ghSession': 'GitHub CLI has no active session. Run "gh auth login" and try again.',
     'init.ghUser': 'Could not get the authenticated GitHub user.',
     'init.badConfig': '.brainrc.json exists but is not valid JSON: {error}',
+
+    'update.available': '\n[update] A new version of brain-corp is available: v{latest} (current: v{current}).',
+    'update.prompt': 'Do you want to update brain-corp to v{latest} now?',
+    'update.skipped': '[update] Update skipped. Continuing with the current version.',
+    'update.installing': '[update] Installing brain-corp v{latest} globally...',
+    'update.installed': '[update] brain-corp v{latest} installed. Restart the CLI to use the new version.',
+    'update.failed': '[update] Could not update automatically: {error}',
+    'update.commandHint': '[update] Run this command to update: {command}',
 
     'sdd.help': `brain SDD (.brain/)
 
@@ -459,6 +480,7 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'bin.cmd.normalize': 'Normalizar tickets importados.',
     'bin.cmd.complete': 'Cerrar la entrega de un ticket.',
     'bin.cmd.hotfix': 'Crear un ticket de emergencia.',
+    'bin.cmd.hydrate': 'Clonar e hidratar los sidecars faltantes desde el mapa de topología.',
 
     'init.agentsHeading': 'Motor de agente CLI para esta sesión',
     'init.customAgentPrompt': 'Nombre del agente personalizado',
@@ -471,6 +493,18 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'init.projectWarning': '  Aviso: no se pudo verificar el Project (puede faltar el scope "project"). Se guardará igualmente.',
     'init.syncPull': 'Sincronizando tickets desde GitHub (sync-pull)...',
     'init.syncPullFailed': '[init-brain] sync-pull no pudo completarse. Se continúa con el estado local.',
+    'init.hydrateFailed': '[init-brain] No se pudieron hidratar {failed} sidecar(s). Revisa los errores anteriores y reintenta con "brain hydrate".',
+    'hydrate.heading': '[hydrate] Hidratando sidecars desde config/system-map.json...',
+    'hydrate.empty': '[hydrate] No hay sidecars registrados; nada que hidratar.',
+    'hydrate.skipped': '  [skip] {repo}: ya está inicializado en {path}.',
+    'hydrate.cloning': '  [clone] {repo} -> {path}',
+    'hydrate.cloned': '  [ok] {repo} clonado correctamente.',
+    'hydrate.failed': '  [error] No se pudo hidratar {repo}: {error}',
+    'hydrate.summary': '[hydrate] {cloned} clonados, {skipped} omitidos, {failed} fallidos.',
+    'hydrate.pathMissing': 'El repositorio no tiene "path" configurado en config/system-map.json.',
+    'hydrate.pathOutsideRoot': 'La ruta del sidecar "{path}" debe permanecer dentro de la raíz de brain-corp.',
+    'hydrate.noRemote': 'El sidecar "{repo}" no tiene "remote" ni "sshUrl" para clonar.',
+    'hydrate.gitFailed': '"git clone" terminó con código {status}.',
     'init.watcherActive': 'Watcher ya activo (PID {pid}).',
     'init.watcherPrompt': '¿Activar watcher en tiempo real (cada 45s)?',
     'init.watcherOff': 'Watcher no activado.',
@@ -504,6 +538,14 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'init.ghSession': 'El CLI de GitHub no tiene una sesión activa. Ejecuta "gh auth login" y vuelve a intentar.',
     'init.ghUser': 'No se pudo obtener el usuario autenticado de GitHub.',
     'init.badConfig': '.brainrc.json existe pero no es JSON válido: {error}',
+
+    'update.available': '\n[update] Hay una nueva versión de brain-corp disponible: v{latest} (actual: v{current}).',
+    'update.prompt': '¿Deseas actualizar brain-corp a v{latest} ahora?',
+    'update.skipped': '[update] Actualización omitida. Se continúa con la versión actual.',
+    'update.installing': '[update] Instalando brain-corp v{latest} de forma global...',
+    'update.installed': '[update] brain-corp v{latest} instalado. Reinicia el CLI para usar la nueva versión.',
+    'update.failed': '[update] No se pudo actualizar automáticamente: {error}',
+    'update.commandHint': '[update] Ejecuta este comando para actualizar: {command}',
 
     'sdd.help': `brain SDD (.brain/)
 
