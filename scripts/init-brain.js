@@ -8,6 +8,7 @@ const { buildCommand, buildNodeCommand } = require('./lib/shell')
 const { confirm, isInteractiveTerminal, promptSelection } = require('./lib/prompts')
 const { provisionAgentAssets } = require('./lib/agent-provision')
 const { hydrateSidecars } = require('./lib/hydrate')
+const { ensureWorkspaceGitignore } = require('./lib/workspace-gitignore')
 const {
   checkCliForUpdate,
   installUpdate,
@@ -132,6 +133,20 @@ async function maybeOfferUpdate(rl, updateCheck) {
 
   console.warn(t('update.failed', { error: installed.error }))
   console.log(t('update.commandHint', { command: result.installCommand }))
+}
+
+function ensureRootGitignore() {
+  try {
+    const result = ensureWorkspaceGitignore(ROOT_DIR)
+
+    if (result.created) {
+      console.log(t('init.gitignoreCreated'))
+    } else if (result.updated) {
+      console.log(t('init.gitignoreUpdated'))
+    }
+  } catch (error) {
+    console.warn(t('init.gitignoreFailed', { error: error.message }))
+  }
 }
 
 function runGh(args, { allowFailure = false } = {}) {
@@ -550,6 +565,7 @@ async function main() {
   try {
     await chooseLanguage(rl)
     await maybeOfferUpdate(rl, updateCheck)
+    ensureRootGitignore()
 
     const manualSetup = process.argv.includes('--manual')
     const mapPath = systemMapPath(ROOT_DIR)

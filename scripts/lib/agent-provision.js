@@ -1,6 +1,7 @@
 const fs = require('node:fs')
 const path = require('node:path')
 const { provisionBrainAssets } = require('./brain/templates')
+const { ensureWorkspaceGitignore } = require('./workspace-gitignore')
 const { resolveLanguage } = require('./config')
 
 const PACKAGE_ROOT = path.resolve(__dirname, '..', '..')
@@ -98,6 +99,13 @@ function provisionCoreAssets({ workspaceDir = process.cwd(), overwrite = false, 
 
   results.push(...provisionBrainAssets(workspaceDir, { overwrite }))
   results.push(...ensureTicketStructure(workspaceDir))
+
+  const gitignore = ensureWorkspaceGitignore(workspaceDir)
+  results.push({
+    created: gitignore.created,
+    updated: gitignore.updated,
+    path: gitignore.path
+  })
 
   return results
 }
