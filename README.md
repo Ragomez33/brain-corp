@@ -66,7 +66,7 @@ When choosing the agent, `brain init` automatically provisions the workspace:
 - `.agents/prompts/` and `.agents/skills/` with the analyst role and base skills.
 - `.brain/templates/` with the SDD engine EARS templates.
 - `.brain/memory/` with the central constitution (`constitution.md` and `constitution-template.json`).
-- `.opencode/commands/` for OpenCode (`/cross-analyze`, `/init-work`, `/specify`, `/plan`, `/tasks`, `/implement`, `/analyze`, `/sanity`, `/sync`).
+- `.opencode/commands/` for OpenCode (`/cross-analyze`, `/init-work`, `/specify`, `/plan`, `/tasks`, `/implement`, `/analyze`, `/normalize`, `/sanity-check`, `/sanity`, `/sync`, `/complete`, `/hotfix`).
 - Equivalent structures for Claude Code (`.claude/commands/`), Cursor (`.cursor/rules/`) or Antigravity (`.antigravity/rules/`).
 - `AGENTS.md` as a generic entry point for other agents.
 - A managed root `.gitignore` block for local state, agent/IDE artifacts, logs and builds.
@@ -101,15 +101,15 @@ At startup, `brain init` checks NPM for a newer `brain-corp` version with a shor
 
 ### 3. GitHub Issues synchronization
 
-- `npm run sync` — runs the pre-flight sanity check and publishes `.agents/tickets/backlog/` tickets as issues, writing `github_issue` in the frontmatter. If the sanity check fails, it aborts; use `--skip-sanity` to force it.
+- `npm run sync` — repairs existing ticket names and legacy IDs, runs the pre-flight sanity check and publishes `.agents/tickets/backlog/` tickets as issues, writing `github_issue` in the frontmatter. If the sanity check fails, it aborts; use `--skip-sanity` to force it.
 - `npm run sync:pull` — imports issues (open and closed) as local tickets, infers state (`backlog`/`done`) and marks those without valid frontmatter as `needs_formatting`. Strict tickets are named from their frontmatter `id`, never from the GitHub issue number. The command also repairs existing workspaces by normalizing legacy ids and renaming files whose name does not match the id.
 - `npm run watch` — loop that runs `sync-pull` + normalization every 45 s (configurable).
-- `npm run normalize` — completes and moves `needs_formatting` tickets to `backlog` with the required format.
-- `npm run sanity` — audits ticket coherence (IDs, states, dependencies, cycles, duplicates and client→provider rules); with `--write` it writes `.agents/tickets/.sanity-check.json`. It runs automatically before `npm run sync`.
+- `npm run normalize` — completes and moves `needs_formatting` tickets to `backlog` with the required format; it also canonicalizes ticket IDs and renames files when needed.
+- `npm run sanity` — audits ticket coherence (IDs, states, dependencies, cycles, duplicates, file-name/id mismatches, duplicate `github_issue` values, canonical ID collisions and client→provider rules); with `--write` it writes `.agents/tickets/.sanity-check.json`. It runs automatically before `npm run sync`.
 - `npm run complete -- TICK-014 [PR]` — closes the delivery: sets `status: "done"`, records the PR in `## Delivery`, moves the ticket to `.agents/tickets/done/` and closes the GitHub issue if it exists.
 - `npm run hotfix -- --title "..." --domain <sidecar> --module <module> --spec-impact none` — creates an emergency ticket, prepares the `fix/TICK-XXX-slug` branch in the sidecar and suggests the `fix(<module>): ...` commit. With `--publish` it creates the issue via `gh`.
 
-Ticket IDs and GitHub issue numbers are independent. The frontmatter `id` is the canonical identity and `github_issue` is only the link. `sync:pull` derives file names from the `id`, and `sanity` blocks any ticket whose file name does not start with its `id`.
+Ticket IDs and GitHub issue numbers are independent. The frontmatter `id` is the canonical identity and `github_issue` is only the link. Both `sync` and `sync:pull` repair existing file-name/id mismatches and legacy IDs before proceeding, and `sanity` blocks any ticket whose file name does not start with its `id`.
 
 ### 4. Analysis and tickets
 
@@ -209,10 +209,13 @@ brain tasks TICK-XXX      # generate tasks.md
 brain implement TICK-XXX  # run tasks (--mode checkpoint|batch, --complete TXXX)
 brain analyze TICK-XXX    # detect spec drift
 brain audit <audit>       # run a native repository audit
-brain pr TICK-XXX         # create a PR from the ticket using the bundled template
-brain sync:pull       # import issues
-brain sync            # publish tickets
-brain sanity          # audit tickets
+brain pr TICK-XXX             # create a PR from the ticket using the bundled template
+brain sync:pull               # import issues and repair ticket names/IDs
+brain sync                    # repair, validate and publish tickets
+brain sanity                  # audit tickets
+brain normalize               # normalize needs_formatting tickets
+brain complete TICK-XXX [PR]  # close delivery and record the PR
+brain watch                   # continuous sync + normalization
 brain hotfix --title "..." --domain <sidecar> --module <module> --spec-impact none
 ```
 
