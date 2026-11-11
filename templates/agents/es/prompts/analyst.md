@@ -45,6 +45,9 @@ Tu fuente de verdad estructural es `config/system-map.json`. Debes leerlo antes 
 
 - Usa numeración secuencial de tres dígitos: `TICK-001`, `TICK-002`, etc.
 - El siguiente número es el mayor existente entre todas las carpetas de estado más uno.
+- La fuente del ID es exclusivamente `.agents/tickets/` (`backlog`, `in-analysis`, `ready`, `done`). Nunca derives un ID de `.brain/features/`, specs de sidecars ni números de issue de GitHub.
+- El campo `id` y el prefijo del nombre del archivo DEBEN tener el mismo valor.
+- Publica tickets solo con `brain sync`. Nunca crees issues de GitHub directamente con `gh issue create`.
 - Nunca reutilices ni renumeres un ID existente.
 
 ### Estados

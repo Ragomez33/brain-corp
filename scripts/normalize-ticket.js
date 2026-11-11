@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const fs = require('node:fs')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const {
@@ -7,6 +8,8 @@ const {
   parseTicket,
   listTickets,
   inferIssueNumber,
+  normalizeTicketId,
+  ticketSlugFromFileName,
   inferTargetDomain,
   today,
   buildFrontmatter,
@@ -159,14 +162,20 @@ function normalizeTicket(ticket, { push }) {
     path.basename(ticket.filePath, '.md')
 
   const domain = inferTargetDomain(`${title}\n${ticket.content}`)
+  const rawId = ticket.data.id || `TICK-${issueNumber || 'LOCAL'}`
+  const ticketId = normalizeTicketId(rawId) || String(rawId).trim().toUpperCase()
+  const dependencies = Array.isArray(ticket.data.dependencies)
+    ? ticket.data.dependencies.map(dep => normalizeTicketId(dep) || dep)
+    : []
+
   const data = {
-    id: ticket.data.id || `TICK-${issueNumber || 'LOCAL'}`,
+    id: ticketId,
     title,
     author: 'Brain-Corp Analyst',
     target_domain: domain,
     status: 'backlog',
     created_at: ticket.data.created_at || today(),
-    dependencies: Array.isArray(ticket.data.dependencies) ? ticket.data.dependencies : []
+    dependencies
   }
 
   if (issueNumber) data.github_issue = issueNumber
@@ -174,7 +183,14 @@ function normalizeTicket(ticket, { push }) {
   const raw = `${buildFrontmatter(data)}\n\n${buildNormalizedBody(ticket.content, domain)}`
   writeTicket(ticket.filePath, raw)
 
-  const finalPath = moveTicket(ticket.filePath, 'backlog')
+  let finalPath = moveTicket(ticket.filePath, 'backlog')
+  const targetName = `${ticketId}-${ticketSlugFromFileName(finalPath, title)}.md`
+  const targetPath = path.join(path.dirname(finalPath), targetName)
+
+  if (path.resolve(finalPath) !== path.resolve(targetPath) && !fs.existsSync(targetPath)) {
+    fs.renameSync(finalPath, targetPath)
+    finalPath = targetPath
+  }
 
   if (push && issueNumber) {
     runGh(['issue', 'edit', String(issueNumber), '--body-file', finalPath])

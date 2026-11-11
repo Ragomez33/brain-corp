@@ -6,7 +6,7 @@ agent: build
 Run the structural sanity check and ticket coherence analysis.
 
 ```bash
-node scripts/sanity-check.js --write --json
+brain sanity --write --json
 ```
 
 Then follow the protocol in `.opencode/commands/sanity-check.md`: fix domains, dependencies, duplicates and format before synchronizing.

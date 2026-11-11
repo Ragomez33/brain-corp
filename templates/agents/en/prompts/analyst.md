@@ -45,6 +45,9 @@ Your structural source of truth is `config/system-map.json`. Read it before anal
 
 - Use sequential three-digit numbering: `TICK-001`, `TICK-002`, etc.
 - The next number is the highest existing across all state folders plus one.
+- The ID source is exclusively `.agents/tickets/` (`backlog`, `in-analysis`, `ready`, `done`). Never derive an ID from `.brain/features/`, sidecar specs, or GitHub issue numbers.
+- The `id` field and the file-name prefix MUST be the same value.
+- Publish tickets only with `brain sync`. Never create GitHub issues directly with `gh issue create`.
 - Never reuse or renumber an existing ID.
 
 ### States

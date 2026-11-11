@@ -16,7 +16,7 @@ Act as the **Principal Analyst Architect of brain-corp** running ticket normaliz
 ## Step 1 — Select the ticket
 
 1. If the argument contains an ID (`TICK-XXX`, `ticket#XXX`) or an issue number, locate it in `.agents/tickets/` or via `gh issue view`.
-2. If there is no argument, run `node scripts/normalize-ticket.js --json` and show the user the pending tickets to choose from.
+2. If there is no argument, run `brain normalize --json` and show the user the pending tickets to choose from.
 3. Read the full ticket. It must have `status: "needs_formatting"`; otherwise report and stop.
 
 ## Step 2 — Analyze the content
@@ -24,7 +24,7 @@ Act as the **Principal Analyst Architect of brain-corp** running ticket normaliz
 1. Read `config/system-map.json`.
 2. Analyze the plain ticket text (title and body) and infer `target_domain`:
    - A domain registered in `config/system-map.json`, or `shared`.
-   - Use the suggestion from `node scripts/normalize-ticket.js --json` as a starting point, but validate against the real content and map domains.
+   - Use the suggestion from `brain normalize --json` as a starting point, but validate against the real content and map domains.
 3. If the domain cannot be confidently inferred, ask a single clarifying question before continuing.
 
 ## Step 3 — Rewrite the ticket
@@ -63,7 +63,7 @@ Rules:
 1. If the ticket has `github_issue`, run:
 
 ```bash
-node scripts/normalize-ticket.js --push <path-to-ticket>
+brain normalize --push <path-to-ticket>
 ```
 
    This internally runs `gh issue edit <number> --body-file <path-to-ticket>`.

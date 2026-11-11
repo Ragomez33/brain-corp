@@ -42,6 +42,8 @@ Ejecuta este protocolo en orden. **Modo Orquestador Raíz:** trabaja siempre des
 
    El cuerpo debe contener las tres secciones obligatorias, en orden: `## Contexto / Hallazgo`, `## Requerimientos Técnicos` y `## Impacto en la Arquitectura`. Respeta las reglas de redacción: evidencia verificable, español técnico, sin código completo de producto.
 
+   El ID sale únicamente de `.agents/tickets/` (todas las carpetas de estado). No uses `.brain/features/`, specs de sidecars ni números de issue de GitHub. El `id` y el prefijo del nombre del archivo deben ser idénticos. Publica con `brain sync`; nunca crees el issue directamente con `gh issue create`.
+
 6. **Reporta.** Devuelve un resumen breve con: ruta del ticket creado, ID, título, `target_domain` y el hallazgo principal en 1–2 frases. Si el análisis arrojó varios problemas coherentes, crea tickets separados y declara sus `dependencies`.
 
 Si el tema solicitado está vacío o es ambiguo, pregunta al usuario qué módulo/dominio analizar antes de generar el ticket.

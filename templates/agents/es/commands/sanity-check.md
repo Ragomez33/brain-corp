@@ -16,7 +16,7 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** ejecutando un san
 
 ## Paso 1 — Recolectar entradas
 
-1. Ejecuta `node scripts/sanity-check.js --write --json` y conserva su resultado como validación estructural base (IDs, campos, estados, dependencias, ciclos, duplicados, reglas UI→Backend).
+1. Ejecuta `brain sanity --write --json` y conserva su resultado como validación estructural base (IDs, campos, estados, dependencias, ciclos, duplicados, reglas UI→Backend).
 2. Lee todos los tickets de `.agents/tickets/backlog/`. Revisa también `in-analysis/`, `ready/` y `done/` para resolver dependencias y detectar duplicados contra tickets ya existentes.
 3. Lee `config/system-map.json` y localiza los esquemas, contratos y consumidores reales de cada sidecar usando `repositories[].path`, `stack`, `domains` y `specs`:
    - En sidecars `provider`: esquemas de datos, migraciones, endpoints, resolvers o servicios.
@@ -48,7 +48,7 @@ Si encuentras fallas:
 ## Paso 4 — Marcar listos para sync
 
 - No cambies `status` a `ready` ni muevas archivos de carpeta: `scripts/sync-github.js` consume únicamente `.agents/tickets/backlog/` y el estado `ready` está reservado para implementación.
-- Tras aplicar correcciones, vuelve a ejecutar `node scripts/sanity-check.js --write --json` para regenerar el reporte.
+- Tras aplicar correcciones, vuelve a ejecutar `brain sanity --write --json` para regenerar el reporte.
 - Si no quedan errores bloqueantes, `.agents/tickets/.sanity-check.json` debe quedar con este contrato:
 
 ```json

@@ -4,7 +4,7 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { execFileSync } = require('node:child_process')
-const { listTickets, inferIssueNumber } = require('./lib/tickets')
+const { findTicketsByReference, inferIssueNumber } = require('./lib/tickets')
 const { getRegisteredRepositories, readSystemMap } = require('./lib/system-map')
 const { resolveLanguage } = require('./lib/config')
 const { t } = require('./lib/i18n')
@@ -73,12 +73,8 @@ function parseArgs(argv) {
 }
 
 function findTicket(ticketId) {
-  const target = String(ticketId).toUpperCase()
-  const matches = listTickets().filter(ticket => {
-    const id = String(ticket.data.id || '').toUpperCase()
-    const fileName = path.basename(ticket.filePath).toUpperCase()
-    return id === target || fileName.startsWith(`${target}-`)
-  })
+  const target = String(ticketId || '').trim().toUpperCase()
+  const matches = findTicketsByReference(target)
 
   if (matches.length === 0) fail(t('pr.ticketNotFound', { ticket: target }))
   if (matches.length > 1) fail(t('pr.ticketAmbiguous', { ticket: target }))

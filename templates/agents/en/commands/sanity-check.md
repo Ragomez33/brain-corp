@@ -16,7 +16,7 @@ Act as the **Principal Analyst Architect of brain-corp** running a pre-sync sani
 
 ## Step 1 — Collect inputs
 
-1. Run `node scripts/sanity-check.js --write --json` and keep its result as the structural baseline (IDs, fields, states, dependencies, cycles, duplicates, UI→Backend rules).
+1. Run `brain sanity --write --json` and keep its result as the structural baseline (IDs, fields, states, dependencies, cycles, duplicates, UI→Backend rules).
 2. Read every ticket in `.agents/tickets/backlog/`. Also review `in-analysis/`, `ready/` and `done/` to resolve dependencies and detect duplicates against existing tickets.
 3. Read `config/system-map.json` and locate real schemas, contracts and consumers for each sidecar using `repositories[].path`, `stack`, `domains` and `specs`:
    - `provider` sidecars: data schemas, migrations, endpoints, resolvers or services.
@@ -48,7 +48,7 @@ If you find failures:
 ## Step 4 — Mark ready for sync
 
 - Do not change `status` to `ready` or move files between folders: `scripts/sync-github.js` consumes only `.agents/tickets/backlog/` and `ready` is reserved for implementation.
-- After applying fixes, re-run `node scripts/sanity-check.js --write --json` to regenerate the report.
+- After applying fixes, re-run `brain sanity --write --json` to regenerate the report.
 - If there are no blocking errors, `.agents/tickets/.sanity-check.json` must keep this contract:
 
 ```json

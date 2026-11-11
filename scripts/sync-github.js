@@ -5,6 +5,7 @@ const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const matter = require('gray-matter')
 const { runSanityCheck } = require('./lib/sanity')
+const { logRepair, repairTickets } = require('./lib/repair')
 const { t } = require('./lib/i18n')
 
 const ROOT_DIR = process.cwd()
@@ -214,6 +215,10 @@ function main() {
   const args = parseArgs(process.argv.slice(2))
 
   validateGhCli()
+
+  // Align existing ticket files before the blocking sanity gate. This keeps
+  // workspaces created by older versions from staying permanently blocked.
+  logRepair(repairTickets())
 
   runPreflightSanity(args)
 

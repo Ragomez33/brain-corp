@@ -16,7 +16,7 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** ejecutando la nor
 ## Paso 1 — Seleccionar el ticket
 
 1. Si el argumento contiene un ID (`TICK-XXX`, `ticket#XXX`) o un número de issue, localízalo en `.agents/tickets/` o mediante `gh issue view`.
-2. Si no hay argumento, ejecuta `node scripts/normalize-ticket.js --json` y muestra al usuario la lista de tickets pendientes para que elija uno.
+2. Si no hay argumento, ejecuta `brain normalize --json` y muestra al usuario la lista de tickets pendientes para que elija uno.
 3. Lee el ticket completo. Debe tener `status: "needs_formatting"`; si no, informa y detente.
 
 ## Paso 2 — Analizar el contenido
@@ -24,7 +24,7 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** ejecutando la nor
 1. Lee `config/system-map.json`.
 2. Analiza el texto plano del ticket (título y cuerpo) e infiere el `target_domain`:
    - Un `target_domain` registrado en `config/system-map.json`, o `shared`.
-   - Usa la sugerencia de `node scripts/normalize-ticket.js --json` como punto de partida, pero valida con el contenido real y los dominios del mapa.
+   - Usa la sugerencia de `brain normalize --json` como punto de partida, pero valida con el contenido real y los dominios del mapa.
 3. Si el dominio no puede inferirse con confianza, formula una sola pregunta de clarificación al usuario antes de continuar.
 
 ## Paso 3 — Reescribir el ticket
@@ -63,7 +63,7 @@ Reglas:
 1. Si el ticket tiene `github_issue`, ejecuta:
 
 ```bash
-node scripts/normalize-ticket.js --push <ruta-al-ticket>
+brain normalize --push <ruta-al-ticket>
 ```
 
    Esto ejecuta internamente `gh issue edit <numero> --body-file <ruta-al-ticket>`.

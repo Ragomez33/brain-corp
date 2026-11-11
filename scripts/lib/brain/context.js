@@ -1,34 +1,32 @@
-const fs = require('node:fs')
 const path = require('node:path')
-const { parseTicket, STATUS_DIRS } = require('../tickets')
+const {
+  findTicketsByReference,
+  normalizeTicketId,
+  ticketsDir
+} = require('../tickets')
 const { getRegisteredRepositories, readSystemMap } = require('../system-map')
 const { brainDir } = require('./state')
 
-function ticketsDir(rootDir) {
-  return path.join(rootDir, '.agents', 'tickets')
-}
-
-function normalizeTicketId(value) {
-  return String(value || '').trim().toUpperCase()
+function canonicalTicketId(value) {
+  return normalizeTicketId(value) || String(value || '').trim().toUpperCase()
 }
 
 function findTicket(rootDir, ticketId) {
-  const normalized = normalizeTicketId(ticketId)
-  if (!normalized) return null
+  const matches = findTicketsByReference(ticketId, rootDir)
+  if (matches.length === 0) return null
 
-  for (const state of STATUS_DIRS) {
-    const directory = path.join(ticketsDir(rootDir), state)
-    if (!fs.existsSync(directory)) continue
+  if (matches.length > 1) {
+    const normalized = canonicalTicketId(ticketId)
+    const paths = matches
+      .map(ticket => path.relative(rootDir, ticket.filePath))
+      .join('\n  - ')
 
-    for (const file of fs.readdirSync(directory)) {
-      if (!file.endsWith('.md')) continue
-      if (!file.toUpperCase().startsWith(normalized)) continue
-
-      return parseTicket(path.join(directory, file))
-    }
+    throw new Error(
+      `Ticket ${normalized} is ambiguous; it matches several files:\n  - ${paths}`
+    )
   }
 
-  return null
+  return matches[0]
 }
 
 function findRepository(repositories, repoId) {
@@ -85,7 +83,7 @@ function resolveContext({ rootDir = process.cwd(), ticketId, repoId }) {
 
   const ticket = findTicket(rootDir, ticketId)
   if (!ticket) {
-    throw new Error(`Ticket ${normalizeTicketId(ticketId)} was not found in .agents/tickets/.`)
+    throw new Error(`Ticket ${canonicalTicketId(ticketId)} was not found in .agents/tickets/.`)
   }
 
   const map = readSystemMap(rootDir)
@@ -107,14 +105,18 @@ function resolveContext({ rootDir = process.cwd(), ticketId, repoId }) {
   }
 
   const repoDir = path.resolve(rootDir, repository.path)
-  const featureDir = path.join(brainDir(repoDir), 'features', normalizeTicketId(ticket.data.id || ticketId))
+  const featureDir = path.join(
+    brainDir(repoDir),
+    'features',
+    canonicalTicketId(ticket.data.id || ticketId)
+  )
   const contractRequired = requiresContract(map, repository, ticket)
 
   return {
     rootDir,
     map,
     ticket,
-    ticketId: normalizeTicketId(ticket.data.id || ticketId),
+    ticketId: canonicalTicketId(ticket.data.id || ticketId),
     targetDomain,
     repository,
     repoDir,
@@ -122,7 +124,7 @@ function resolveContext({ rootDir = process.cwd(), ticketId, repoId }) {
     contractRequired,
     related: relatedRepositories(map, repository),
     variables: {
-      TICKET_ID: normalizeTicketId(ticket.data.id || ticketId),
+      TICKET_ID: canonicalTicketId(ticket.data.id || ticketId),
       TICKET_TITLE: String(ticket.data.title || ticketId),
       SOURCE_TICKET: path
         .relative(rootDir, ticket.filePath)

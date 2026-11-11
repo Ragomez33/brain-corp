@@ -1,5 +1,5 @@
 const path = require('node:path')
-const { listTickets } = require('./tickets')
+const { listTickets, normalizeTicketId } = require('./tickets')
 const {
   getAllApiPatterns,
   getRequiredTicketSections,
@@ -89,6 +89,8 @@ function runSanityCheck() {
   const dependencies = new Map()
   const titles = new Map()
   const fileNames = new Map()
+  const issueNumbers = new Map()
+  const canonicalIds = new Map()
 
   for (const ticket of tickets) {
     const label = ticketLabel(ticket)
@@ -135,6 +137,12 @@ function runSanityCheck() {
       const issue = Number(data.github_issue)
       if (!Number.isInteger(issue) || issue <= 0) {
         errors.push(`${fileName}: "github_issue" is invalid (${data.github_issue}).`)
+      } else if (issueNumbers.has(issue)) {
+        errors.push(
+          `${fileName}: "github_issue" (${issue}) is duplicated; also used by ${issueNumbers.get(issue)}.`
+        )
+      } else {
+        issueNumbers.set(issue, fileName)
       }
     }
 
@@ -160,8 +168,23 @@ function runSanityCheck() {
         byId.set(data.id, ticket)
       }
 
+      const canonicalId =
+        normalizeTicketId(data.id) || String(data.id).trim().toUpperCase()
+
+      if (canonicalIds.has(canonicalId)) {
+        errors.push(
+          `${fileName}: canonical id ${canonicalId} is duplicated; also exists in ${path.basename(
+            canonicalIds.get(canonicalId).filePath
+          )}.`
+        )
+      } else {
+        canonicalIds.set(canonicalId, ticket)
+      }
+
       if (!fileName.startsWith(`${data.id}-`) && fileName !== `${data.id}.md`) {
-        warnings.push(`${fileName}: file name does not start with id ${data.id}.`)
+        errors.push(
+          `${fileName}: file name does not start with id ${data.id}. Run "brain sync" or "brain sync:pull" to repair it automatically.`
+        )
       }
 
       if (fileNames.has(fileName)) {

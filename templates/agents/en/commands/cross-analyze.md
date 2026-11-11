@@ -42,6 +42,8 @@ Run this protocol in order. **Root Orchestrator Mode:** always work from the bra
 
    The body must contain the three mandatory sections, in order: `## Context / Finding`, `## Technical Requirements` and `## Architecture Impact` (fixed canonical literals). Follow the writing rules: verifiable evidence, concise technical English, no complete product code.
 
+   The ID comes only from `.agents/tickets/` (all state folders). Do not use `.brain/features/`, sidecar specs, or GitHub issue numbers. The `id` and the file-name prefix must be identical. Publish with `brain sync`; never create the issue directly with `gh issue create`.
+
 6. **Report.** Return a brief summary with: created ticket path, ID, title, `target_domain` and the main finding in 1–2 sentences. If the analysis produced several coherent problems, create separate tickets and declare their `dependencies`.
 
 If the requested topic is empty or ambiguous, ask the user which module/domain to analyze before creating the ticket.

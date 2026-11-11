@@ -27,7 +27,7 @@ Si falta el ID, pide al usuario que lo indique y detente. Si el ID no existe o e
 Ejecuta:
 
 ```bash
-node scripts/complete-ticket.js <TICK-XXX> [PR] --json
+brain complete <TICK-XXX> [PR] --json
 ```
 
 El script realiza, en este orden:

@@ -27,7 +27,7 @@ If the ID is missing, ask the user and stop. If the ID does not exist or is ambi
 Run:
 
 ```bash
-node scripts/complete-ticket.js <TICK-XXX> [PR] --json
+brain complete <TICK-XXX> [PR] --json
 ```
 
 The script performs, in order:

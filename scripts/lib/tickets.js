@@ -7,6 +7,7 @@ const { getRegisteredRepositories, readSystemMap } = require('./system-map')
 const ROOT_DIR = process.cwd()
 const TICKETS_DIR = path.join(ROOT_DIR, '.agents', 'tickets')
 const STATUS_DIRS = ['backlog', 'in-analysis', 'ready', 'done']
+const TICKET_ID_PATTERN = /^TICK-\d{3}$/
 const REQUIRED_FIELDS = [
   'id',
   'title',
@@ -28,9 +29,13 @@ const FRONTMATTER_ORDER = [
   'github_issue'
 ]
 
-function ensureTicketDirs() {
+function ticketsDir(rootDir = ROOT_DIR) {
+  return path.join(rootDir, '.agents', 'tickets')
+}
+
+function ensureTicketDirs(rootDir = ROOT_DIR) {
   for (const dir of STATUS_DIRS) {
-    fs.mkdirSync(path.join(TICKETS_DIR, dir), { recursive: true })
+    fs.mkdirSync(path.join(ticketsDir(rootDir), dir), { recursive: true })
   }
 }
 
@@ -84,13 +89,14 @@ function parseTicket(filePath) {
   }
 }
 
-function listTickets() {
-  ensureTicketDirs()
+function listTickets(rootDir = ROOT_DIR) {
+  const baseDir = ticketsDir(rootDir)
+  ensureTicketDirs(rootDir)
 
   const tickets = []
 
   for (const dir of STATUS_DIRS) {
-    const absoluteDir = path.join(TICKETS_DIR, dir)
+    const absoluteDir = path.join(baseDir, dir)
     const files = fs.readdirSync(absoluteDir).filter(file => file.endsWith('.md'))
 
     for (const file of files) {
@@ -119,12 +125,61 @@ function inferIssueNumber(filePath, data = {}) {
   return Number.isInteger(fromData) && fromData > 0 ? fromData : null
 }
 
-function findTicketByIssue(issueNumber) {
+function normalizeTicketId(value) {
+  const match = String(value || '')
+    .trim()
+    .toUpperCase()
+    .match(/^TICK-(\d{1,3})$/)
+
+  return match ? `TICK-${match[1].padStart(3, '0')}` : null
+}
+
+function isCanonicalTicketId(value) {
+  return TICKET_ID_PATTERN.test(String(value || '').trim().toUpperCase())
+}
+
+function ticketSlugFromFileName(filePath, fallbackTitle = '') {
+  const base = path.basename(filePath, '.md')
+  const match = base.match(/^TICK-\d{1,3}-(.+)$/i)
+
+  return slugify(match ? match[1] : fallbackTitle || base)
+}
+
+function findTicketsByReference(reference, rootDir = ROOT_DIR) {
+  const raw = String(reference || '').trim().toUpperCase()
+  if (!raw) return []
+
+  const canonical = normalizeTicketId(raw)
+  const tickets = listTickets(rootDir)
+
+  const exactId = tickets.filter(
+    ticket => String(ticket.data.id || '').trim().toUpperCase() === raw
+  )
+  if (exactId.length > 0) return exactId
+
+  if (canonical) {
+    const canonicalId = tickets.filter(
+      ticket => normalizeTicketId(ticket.data.id) === canonical
+    )
+    if (canonicalId.length > 0) return canonicalId
+  }
+
+  return tickets.filter(ticket => {
+    const fileName = path.basename(ticket.filePath).toUpperCase()
+    const names = canonical && canonical !== raw ? [raw, canonical] : [raw]
+
+    return names.some(name => {
+      return fileName.startsWith(`${name}-`) || fileName === `${name}.md`
+    })
+  })
+}
+
+function findTicketByIssue(issueNumber, rootDir = ROOT_DIR) {
   const target = Number(issueNumber)
   if (!Number.isInteger(target) || target <= 0) return null
 
   return (
-    listTickets().find(ticket => {
+    listTickets(rootDir).find(ticket => {
       const ticketIssue = inferIssueNumber(ticket.filePath, ticket.data)
       return ticketIssue === target
     }) || null
@@ -235,6 +290,8 @@ module.exports = {
   ROOT_DIR,
   TICKETS_DIR,
   STATUS_DIRS,
+  TICKET_ID_PATTERN,
+  ticketsDir,
   ensureTicketDirs,
   slugify,
   today,
@@ -243,6 +300,10 @@ module.exports = {
   listTickets,
   hasStrictFrontmatter,
   inferIssueNumber,
+  normalizeTicketId,
+  isCanonicalTicketId,
+  ticketSlugFromFileName,
+  findTicketsByReference,
   findTicketByIssue,
   updateFrontmatter,
   writeTicket,

@@ -5,7 +5,7 @@ const path = require('node:path')
 const { execFileSync } = require('node:child_process')
 const {
   ROOT_DIR,
-  listTickets,
+  findTicketsByReference,
   updateFrontmatter,
   writeTicket,
   moveTicket,
@@ -99,12 +99,8 @@ function normalizePrReference(value) {
 }
 
 function findTicket(ticketId) {
-  const target = String(ticketId).toUpperCase()
-  const matches = listTickets().filter(ticket => {
-    const id = String(ticket.data.id || '').toUpperCase()
-    const fileName = path.basename(ticket.filePath).toUpperCase()
-    return id === target || fileName.startsWith(`${target}-`)
-  })
+  const target = String(ticketId || '').trim().toUpperCase()
+  const matches = findTicketsByReference(target)
 
   if (matches.length === 0) {
     fail(t('complete.notFound', { ticket: target }))

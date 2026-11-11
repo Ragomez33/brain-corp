@@ -115,7 +115,7 @@ const MESSAGES = {
     'sdd.help': `brain SDD (.brain/)
 
 Usage:
-  node scripts/sdd.js <command> <TICK-XXX> [options]
+  brain <command> <TICK-XXX> [options]
 
 Commands:
   init-work   Create .brain/features/<ticket>/ and contract if it crosses sidecars.
@@ -196,7 +196,7 @@ Options:
     'hotfix.branch': '[hotfix] Branch: {branch} ({repo})',
     'hotfix.suggestedCommit': '[hotfix] Suggested commit: {commit}',
     'hotfix.specImpact': '[hotfix] Spec impact: {impact}',
-    'hotfix.next': '[hotfix] Next: node scripts/sanity-check.js --write',
+    'hotfix.next': '[hotfix] Next: brain sanity --write',
     'hotfix.issueCreated': '[hotfix] Issue #{issue} created.',
     'hotfix.branchError': '[hotfix] Error creating branch: {error}',
     'hotfix.publishError': '[hotfix] Error publishing issue: {error}',
@@ -258,7 +258,7 @@ The command does not run commit or push. The branch must already exist on the re
 
     'complete.missingValue': 'Missing value for {option}',
     'complete.unknownArg': 'Unrecognized argument: {arg}',
-    'complete.ticketRequired': 'You must provide a ticket. Usage: node scripts/complete-ticket.js TICK-014 [PR]',
+    'complete.ticketRequired': 'You must provide a ticket. Usage: brain complete TICK-014 [PR]',
     'complete.notFound': 'Ticket {ticket} not found in .agents/tickets/.',
     'complete.ambiguous': 'Ticket {ticket} is ambiguous; it matches several files:\n  - {paths}',
     'complete.done': '[complete-ticket] {ticket} marked as done -> {path}',
@@ -291,7 +291,7 @@ The command does not run commit or push. The branch must already exist on the re
     'normalize.repoImpact': 'repository `{repo}`.',
     'normalize.repoImpactDetail': 'repository `{repo}`{role}{stack}.',
 
-    'sync.configMissing': '[sync-github] .brainrc.json does not exist. Run "npm run init-brain". Global flags/env vars will be used if present.',
+    'sync.configMissing': '[sync-github] .brainrc.json does not exist. Run "brain init". Global flags/env vars will be used if present.',
     'sync.badConfig': '.brainrc.json is not valid JSON: {error}',
     'sync.missingValue': 'Missing value for {option}',
     'sync.unknownArg': 'Unrecognized argument: {arg}',
@@ -319,7 +319,7 @@ The command does not run commit or push. The branch must already exist on the re
     'setup.help': `brain-corp setup-wizard
 
 Usage:
-  node scripts/setup-wizard.js [options]
+  brain setup [options]
 
 Options:
   --manual   Skip the GitHub API and register repositories by URL or local path.
@@ -386,7 +386,7 @@ Flow:
     'setup.registerPrompt': 'Do you want to register repositories/sidecars in this workspace?',
     'setup.workspaceNoSidecars': 'Workspace initialized without sidecars. You can register them later with "brain setup".',
     'setup.replacePrompt': 'The current configuration does not seem to match this workspace. Replace the sidecar list?',
-    'setup.nextStep': 'Next step: "brain init" or "npm run init-brain".',
+    'setup.nextStep': 'Next step: "brain init".',
 
     'syncpull.unknownArg': 'Unrecognized argument: {arg}',
     'syncpull.badConfig': '.brainrc.json is not valid JSON: {error}',
@@ -394,7 +394,12 @@ Flow:
     'syncpull.updated': '[sync-pull] #{issue}: updated to "{status}" -> {path}',
     'syncpull.newTicket': '[sync-pull] #{issue}: new ticket "{status}"{suffix} -> {path}',
     'syncpull.newTicketSuffix': ' (needs_formatting)',
-    'syncpull.summary': '[sync-pull] Summary: {created} created, {updated} updated, {unchanged} unchanged ({issues} issues on GitHub).',
+    'syncpull.error': '[sync-pull] #{issue}: error -> {error}',
+    'syncpull.duplicateIssue': '[sync-pull] #{issue}: duplicate github_issue in {file}; already used by {existing}. The first ticket wins.',
+    'repair.normalized': '[repair] id {from} -> {to} in {file}',
+    'repair.renamed': '[repair] file {from} -> {to}',
+    'repair.error': '[repair] warning: {error}',
+    'syncpull.summary': '[sync-pull] Summary: {created} created, {updated} updated, {unchanged} unchanged, {failed} failed ({issues} issues on GitHub).',
 
     'sanity.reportWritten': '[sanity-check] Report written to {path}',
     'sanity.tickets': '[sanity-check] Tickets: {tickets} (backlog: {backlog})',
@@ -439,7 +444,7 @@ Options:
     'agents.help': `brain-corp agents:sync
 
 Usage:
-  node scripts/sync-agents.js [options]
+  brain agents:sync [options]
 
 Options:
   --root <dir>     Target workspace (defaults to current directory).
@@ -572,7 +577,7 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'sdd.help': `brain SDD (.brain/)
 
 Uso:
-  node scripts/sdd.js <comando> <TICK-XXX> [opciones]
+  brain <comando> <TICK-XXX> [opciones]
 
 Comandos:
   init-work   Crea .brain/features/<ticket>/ y el contrato si cruza sidecars.
@@ -653,7 +658,7 @@ Opciones:
     'hotfix.branch': '[hotfix] Rama: {branch} ({repo})',
     'hotfix.suggestedCommit': '[hotfix] Commit sugerido: {commit}',
     'hotfix.specImpact': '[hotfix] Spec impact: {impact}',
-    'hotfix.next': '[hotfix] Siguiente: node scripts/sanity-check.js --write',
+    'hotfix.next': '[hotfix] Siguiente: brain sanity --write',
     'hotfix.issueCreated': '[hotfix] Issue #{issue} creado.',
     'hotfix.branchError': '[hotfix] Error al crear la rama: {error}',
     'hotfix.publishError': '[hotfix] Error al publicar el issue: {error}',
@@ -715,7 +720,7 @@ El comando no ejecuta commit ni push. La rama debe existir ya en el remoto.`,
 
     'complete.missingValue': 'Falta el valor para {option}',
     'complete.unknownArg': 'Argumento no reconocido: {arg}',
-    'complete.ticketRequired': 'Debes indicar un ticket. Uso: node scripts/complete-ticket.js TICK-014 [PR]',
+    'complete.ticketRequired': 'Debes indicar un ticket. Uso: brain complete TICK-014 [PR]',
     'complete.notFound': 'No se encontró el ticket {ticket} en .agents/tickets/.',
     'complete.ambiguous': 'El ticket {ticket} es ambiguo; coincide con varios archivos:\n  - {paths}',
     'complete.done': '[complete-ticket] {ticket} marcado como done -> {path}',
@@ -748,7 +753,7 @@ El comando no ejecuta commit ni push. La rama debe existir ya en el remoto.`,
     'normalize.repoImpact': 'repositorio `{repo}`.',
     'normalize.repoImpactDetail': 'repositorio `{repo}`{role}{stack}.',
 
-    'sync.configMissing': '[sync-github] No existe .brainrc.json. Ejecuta "npm run init-brain". Se usarán flags/variables globales si están presentes.',
+    'sync.configMissing': '[sync-github] No existe .brainrc.json. Ejecuta "brain init". Se usarán flags/variables globales si están presentes.',
     'sync.badConfig': '.brainrc.json no es JSON válido: {error}',
     'sync.missingValue': 'Falta el valor para {option}',
     'sync.unknownArg': 'Argumento no reconocido: {arg}',
@@ -776,7 +781,7 @@ El comando no ejecuta commit ni push. La rama debe existir ya en el remoto.`,
     'setup.help': `brain-corp setup-wizard
 
 Uso:
-  node scripts/setup-wizard.js [opciones]
+  brain setup [opciones]
 
 Opciones:
   --manual   Omite la API de GitHub y registra repositorios por URL o ruta local.
@@ -843,7 +848,7 @@ Flujo:
     'setup.registerPrompt': '¿Deseas registrar repositorios/sidecars en este workspace?',
     'setup.workspaceNoSidecars': 'Workspace inicializado sin sidecars. Podrás registrarlos luego con "brain setup".',
     'setup.replacePrompt': 'La configuración actual parece no corresponder a este workspace. ¿Reemplazar la lista de sidecars?',
-    'setup.nextStep': 'Siguiente paso: "brain init" o "npm run init-brain".',
+    'setup.nextStep': 'Siguiente paso: "brain init".',
 
     'syncpull.unknownArg': 'Argumento no reconocido: {arg}',
     'syncpull.badConfig': '.brainrc.json no es JSON válido: {error}',
@@ -851,7 +856,12 @@ Flujo:
     'syncpull.updated': '[sync-pull] #{issue}: actualizado a "{status}" -> {path}',
     'syncpull.newTicket': '[sync-pull] #{issue}: nuevo ticket "{status}"{suffix} -> {path}',
     'syncpull.newTicketSuffix': ' (needs_formatting)',
-    'syncpull.summary': '[sync-pull] Resumen: {created} creados, {updated} actualizados, {unchanged} sin cambios ({issues} issues en GitHub).',
+    'syncpull.error': '[sync-pull] #{issue}: error -> {error}',
+    'syncpull.duplicateIssue': '[sync-pull] #{issue}: github_issue duplicado en {file}; ya lo usa {existing}. Gana el primer ticket.',
+    'repair.normalized': '[repair] id {from} -> {to} en {file}',
+    'repair.renamed': '[repair] archivo {from} -> {to}',
+    'repair.error': '[repair] advertencia: {error}',
+    'syncpull.summary': '[sync-pull] Resumen: {created} creados, {updated} actualizados, {unchanged} sin cambios, {failed} con error ({issues} issues en GitHub).',
 
     'sanity.reportWritten': '[sanity-check] Reporte escrito en {path}',
     'sanity.tickets': '[sanity-check] Tickets: {tickets} (backlog: {backlog})',
@@ -896,7 +906,7 @@ Opciones:
     'agents.help': `brain-corp agents:sync
 
 Uso:
-  node scripts/sync-agents.js [opciones]
+  brain agents:sync [opciones]
 
 Opciones:
   --root <dir>     Workspace destino (por defecto, el directorio actual).

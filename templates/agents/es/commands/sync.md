@@ -8,11 +8,11 @@ Sincroniza el backlog local con GitHub Issues.
 1. Verifica que `gh auth status` tenga una sesión activa.
 2. Ejecuta el sanity check previo:
    ```bash
-   node scripts/sanity-check.js --write --json
+   brain sanity --write --json
    ```
 3. Publica los tickets:
    ```bash
-   node scripts/sync-github.js
+   brain sync
    ```
 
 No uses `--skip-sanity` salvo que el usuario lo solicite explícitamente.

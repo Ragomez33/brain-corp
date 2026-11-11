@@ -39,7 +39,7 @@ Si falta un dato obligatorio, pregunta antes de ejecutar. Si `--spec-impact` no 
 Ejecuta:
 
 ```bash
-node scripts/hotfix.js \
+brain hotfix \
   --title "<título>" \
   --domain <dominio> \
   --module <módulo> \
@@ -57,7 +57,7 @@ El script:
 
 Si el script falla al crear la rama o publicar el issue, reporta el error y no continúes como si hubiera quedado listo.
 
-Después de crear el ticket, ejecuta `node scripts/sanity-check.js --write` y corrige cualquier error bloqueante (por ejemplo, un hotfix de un sidecar `client` que requiera un cambio de API sin ticket de un sidecar `provider` asociado).
+Después de crear el ticket, ejecuta `brain sanity --write` y corrige cualquier error bloqueante (por ejemplo, un hotfix de un sidecar `client` que requiera un cambio de API sin ticket de un sidecar `provider` asociado).
 
 ## Paso 4 — Preparar la entrega
 

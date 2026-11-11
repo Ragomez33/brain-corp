@@ -102,12 +102,14 @@ At startup, `brain init` checks NPM for a newer `brain-corp` version with a shor
 ### 3. GitHub Issues synchronization
 
 - `npm run sync` — runs the pre-flight sanity check and publishes `.agents/tickets/backlog/` tickets as issues, writing `github_issue` in the frontmatter. If the sanity check fails, it aborts; use `--skip-sanity` to force it.
-- `npm run sync:pull` — imports issues (open and closed) as local tickets, infers state (`backlog`/`done`) and marks those without valid frontmatter as `needs_formatting`.
+- `npm run sync:pull` — imports issues (open and closed) as local tickets, infers state (`backlog`/`done`) and marks those without valid frontmatter as `needs_formatting`. Strict tickets are named from their frontmatter `id`, never from the GitHub issue number. The command also repairs existing workspaces by normalizing legacy ids and renaming files whose name does not match the id.
 - `npm run watch` — loop that runs `sync-pull` + normalization every 45 s (configurable).
 - `npm run normalize` — completes and moves `needs_formatting` tickets to `backlog` with the required format.
 - `npm run sanity` — audits ticket coherence (IDs, states, dependencies, cycles, duplicates and client→provider rules); with `--write` it writes `.agents/tickets/.sanity-check.json`. It runs automatically before `npm run sync`.
 - `npm run complete -- TICK-014 [PR]` — closes the delivery: sets `status: "done"`, records the PR in `## Delivery`, moves the ticket to `.agents/tickets/done/` and closes the GitHub issue if it exists.
 - `npm run hotfix -- --title "..." --domain <sidecar> --module <module> --spec-impact none` — creates an emergency ticket, prepares the `fix/TICK-XXX-slug` branch in the sidecar and suggests the `fix(<module>): ...` commit. With `--publish` it creates the issue via `gh`.
+
+Ticket IDs and GitHub issue numbers are independent. The frontmatter `id` is the canonical identity and `github_issue` is only the link. `sync:pull` derives file names from the `id`, and `sanity` blocks any ticket whose file name does not start with its `id`.
 
 ### 4. Analysis and tickets
 

@@ -1,6 +1,6 @@
 {
   "name": "@rgkoko/brain-corp",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Orchestration CLI for multi-repository ecosystems: sidecar topology, native SDD specifications, tickets and GitHub Issues synchronization.",
   "license": "MIT",
   "author": "Ragomez33",
@@ -39,6 +39,7 @@
   ],
   "scripts": {
     "brain": "node bin/brain.js",
+    "test": "node --test \"tests/*.test.js\"",
     "build": "tsc -p tsconfig.json",
     "prepare": "npm run build",
     "prepack": "npm run build",
