@@ -1,6 +1,6 @@
 {
   "name": "@rgkoko/brain-corp",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Orchestration CLI for multi-repository ecosystems: sidecar topology, native SDD specifications, tickets and GitHub Issues synchronization.",
   "license": "MIT",
   "author": "Ragomez33",
