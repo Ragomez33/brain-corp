@@ -19,7 +19,7 @@
 TICK-XXX → /init-work → /specify → /plan → /tasks → /implement (Checkpoint | Batch) → /analyze → PR (template) → /complete → done/
 ```
 
-- `/init-work TICK-XXX [--repo <id>]` creates `.brain/features/<TICK-XXX>/` and sets `.brain/active.json`.
+- `/init-work TICK-XXX [--repo <id>]` creates `.brain/features/<TICK-XXX>/` and sets `.brain/active.json`. `/specify` runs this initialization automatically when the feature does not exist yet.
 - `/specify` produces `spec.md` in EARS format.
 - `/plan` produces `plan.md` with the technical strategy.
 - `/tasks` produces `tasks.md` with atomic tasks and `REQ-*` references.

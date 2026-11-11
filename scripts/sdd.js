@@ -118,6 +118,14 @@ function printResult(command, result, args) {
 
   if (command === 'specify' || command === 'plan' || command === 'tasks') {
     const { ctx, result: output } = result
+    if (result.initialized) {
+      console.log(
+        t('sdd.autoInit', {
+          ticket: ctx.ticketId,
+          dir: path.relative(process.cwd(), ctx.featureDir)
+        })
+      )
+    }
     const file = path.relative(process.cwd(), output.path)
     console.log(output.created ? t('sdd.generated', { file }) : t('sdd.exists', { file }))
     const nextCommand = { specify: 'plan', plan: 'tasks', tasks: 'implement' }[command]

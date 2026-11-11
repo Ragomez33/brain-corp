@@ -153,7 +153,7 @@ Flow:
 /init-work TICK-XXX → /specify → /plan → /tasks → /implement (Checkpoint | Batch) → /analyze
 ```
 
-- `/init-work` creates the feature and sets `.brain/active.json`; it generates `contract.md` only if the ticket is `shared` or crosses map `relationships`.
+- `/init-work` creates the feature and sets `.brain/active.json`; it generates `contract.md` only if the ticket is `shared` or crosses map `relationships`. `/specify` runs this initialization automatically when the feature does not exist yet.
 - `/implement` supports **checkpoint** mode (one task and confirmation) or **batch** mode (autonomous complete block).
 - `/analyze` audits coherence and detects drift between spec, tasks and code. The former ticket-generating `/analyze` is now called `/cross-analyze`.
 - If a ticket is `shared`, choose the base repository with `--repo <id>`; the spec and contract live there and the orchestrator resolves dependencies from `system-map.json`, without duplicating specs globally.
@@ -229,6 +229,8 @@ brain pr TICK-XXX --dry-run   # render the body and show the gh command
 
 Options: `--repo <id>`, `--title`, `--summary`, `--spec-impact`, `--body-file`, `--lang`, `--draft`, `--dry-run`, `--json`. The command runs `gh pr create` in the resolved sidecar; it **does not run commit or push**, so the branch must already exist on the remote.
 
+Before calling `gh`, `brain pr` validates the git state: it fails if the current branch equals the base, if the branch or base is not published to `origin`, or if `origin` is missing; it warns about uncommitted changes.
+
 ## Audits
 
 The audit suite lives in `src/modules/audit/` (TypeScript) and is available to every user with no license or activation step.
@@ -264,7 +266,7 @@ npm run build   # generates dist/ (included in the published package)
 - **`.gitmodules`** — when present in the container repository, `brain init`/`brain hydrate` synchronize declared submodules and validate their state before falling back to independent sidecar clones.
 - **`.brain/memory/constitution.md`** — centralized ecosystem constitution. `brain init` and `brain setup` deploy it to the workspace if missing (never overwrite a customized one). `constitution-template.json` exposes the same rules in machine-readable form.
 - **`.agents/prompts/`** — analyst behavior (role, protocol, ticket format).
-- **`.agents/skills/`** — provisioned base skills (`brain-corp`, `sdd-brain`, `ticket-ops`).
+- **`.agents/skills/`** — provisioned base skills (`brain-corp`, `sdd-brain`, `ticket-ops`, `brain-corp-pr`).
 - **`.opencode/commands/`** — OpenCode slash commands provisioned for the workspace.
 
 ## Principles

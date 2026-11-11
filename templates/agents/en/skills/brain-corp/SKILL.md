@@ -21,5 +21,6 @@ Use this skill when working inside a workspace orchestrated by brain-corp.
 - `/specify`, `/plan`, `/tasks`: native SDD flow (EARS).
 - `/implement`: run tasks in checkpoint or batch mode.
 - `/analyze`: audit coherence and detect spec drift.
+- Pull requests: use the `brain-corp-pr` skill (`brain pr TICK-XXX`).
 - `/sanity`: validate ticket coherence.
 - `/sync`: publish the backlog as issues.

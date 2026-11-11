@@ -9,7 +9,7 @@ Actúa como el **Arquitecto Analista Principal de brain-corp** redactando la esp
 
 ## Protocolo
 
-1. Resuelve el ticket activo desde `<repo>/.brain/active.json` o desde el argumento `TICK-XXX`. Si no hay feature inicializada, ejecuta primero `/init-work`.
+1. Resuelve el ticket activo desde `<repo>/.brain/active.json` o desde el argumento `TICK-XXX`. Si no hay feature inicializada, el motor la inicializa automáticamente (equivalente a `init-work`) antes de generar la spec.
 2. Ejecuta el scaffold:
 
    ```bash

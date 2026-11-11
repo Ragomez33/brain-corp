@@ -76,9 +76,20 @@ function initWork({ ticketId, repoId, force = false }) {
   return { ctx, templates, contract, language, gitignore }
 }
 
+function ensureFeatureInitialized(ctx, { force = false } = {}) {
+  if (fs.existsSync(ctx.featureDir)) return null
+
+  return initWork({
+    ticketId: ctx.ticketId,
+    repoId: ctx.repository.id,
+    force
+  })
+}
+
 function specify({ ticketId, repoId, force = false }) {
   const ctx = resolveContext({ ticketId, repoId })
   const language = resolveLanguage(ctx.rootDir)
+  const initialization = ensureFeatureInitialized(ctx, { force })
   ensureFeatureDir(ctx)
 
   const result = scaffoldFromTemplate({
@@ -92,7 +103,7 @@ function specify({ ticketId, repoId, force = false }) {
 
   updateActive(ctx.repoDir, { phase: 'specify', language })
 
-  return { ctx, result, language }
+  return { ctx, result, language, initialized: Boolean(initialization) }
 }
 
 function plan({ ticketId, repoId, force = false }) {

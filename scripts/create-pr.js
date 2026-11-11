@@ -67,7 +67,7 @@ function parseArgs(argv) {
   }
 
   if (!args.ticketId && positional[0]) args.ticketId = positional[0]
-  if (!args.ticketId) fail(t('pr.ticketRequired'))
+  if (!args.ticketId && !args.help) fail(t('pr.ticketRequired'))
 
   return args
 }
@@ -111,6 +111,97 @@ function renderTemplate(template, variables) {
   })
 }
 
+function runGit(repository, args) {
+  return execFileSync('git', args, {
+    cwd: repository.absolutePath,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe']
+  }).trim()
+}
+
+function remoteBranchExists(repository, branch) {
+  try {
+    execFileSync('git', ['ls-remote', '--exit-code', '--heads', 'origin', branch], {
+      cwd: repository.absolutePath,
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+function preflight({ repository, base }) {
+  const warnings = []
+  const errors = []
+  const pathLabel = repository.path || repository.absolutePath
+
+  try {
+    runGit(repository, ['rev-parse', '--is-inside-work-tree'])
+  } catch (error) {
+    const detail = error.stderr ? error.stderr.toString().trim() : error.message
+    errors.push(t('pr.preflightNoGit', { path: pathLabel, error: detail }))
+    return { branch: null, warnings, errors }
+  }
+
+  let branch = null
+
+  try {
+    branch = runGit(repository, ['rev-parse', '--abbrev-ref', 'HEAD'])
+  } catch (error) {
+    const detail = error.stderr ? error.stderr.toString().trim() : error.message
+    errors.push(t('pr.preflightNoGit', { path: pathLabel, error: detail }))
+    return { branch, warnings, errors }
+  }
+
+  if (!branch || branch === 'HEAD') {
+    errors.push(t('pr.preflightDetached', { path: pathLabel }))
+  } else if (branch === base) {
+    errors.push(t('pr.preflightSameBranch', { branch, base }))
+  }
+
+  try {
+    const status = runGit(repository, ['status', '--porcelain'])
+    const count = status ? status.split('\n').length : 0
+    if (count > 0) warnings.push(t('pr.preflightDirty', { count, path: pathLabel }))
+  } catch {
+    // Ignore status failures here; the git validation above already reports them.
+  }
+
+  let hasOrigin = true
+
+  try {
+    runGit(repository, ['remote', 'get-url', 'origin'])
+  } catch {
+    hasOrigin = false
+    errors.push(t('pr.preflightNoOrigin', { path: pathLabel }))
+  }
+
+  if (hasOrigin) {
+    if (!remoteBranchExists(repository, base)) {
+      errors.push(t('pr.preflightBaseMissing', { base }))
+    }
+
+    if (branch && branch !== 'HEAD' && branch !== base && !remoteBranchExists(repository, branch)) {
+      errors.push(t('pr.preflightBranchMissing', { branch }))
+    }
+  }
+
+  return { branch, warnings, errors }
+}
+
+function reportPreflight(preflightResult, { failOnErrors = true } = {}) {
+  for (const warning of preflightResult.warnings) {
+    console.error(`[pr] ${warning}`)
+  }
+
+  for (const error of preflightResult.errors) {
+    console.error(`[pr] ${error}`)
+  }
+
+  if (failOnErrors && preflightResult.errors.length > 0) process.exit(1)
+}
+
 function main() {
   const args = parseArgs(process.argv.slice(2))
 
@@ -148,17 +239,23 @@ function main() {
   }
 
   const title = args.title || `${ticketId}: ${ticketTitle}`
+  const preflightResult = preflight({ repository, base })
 
   if (args.dryRun) {
+    reportPreflight(preflightResult, { failOnErrors: false })
+
     const result = {
       ticket: ticketId,
       repository: repository.id,
       language,
       title,
       base,
+      branch: preflightResult.branch,
       draft: args.draft,
       bodyFile: null,
-      dryRun: true
+      dryRun: true,
+      warnings: preflightResult.warnings,
+      errors: preflightResult.errors
     }
 
     if (args.json) {
@@ -172,6 +269,8 @@ function main() {
     return
   }
 
+  reportPreflight(preflightResult)
+
   const bodyFile = path.join(os.tmpdir(), `brain-corp-pr-${ticketId}-${process.pid}.md`)
   fs.writeFileSync(bodyFile, body, { mode: 0o600 })
 
@@ -184,9 +283,11 @@ function main() {
     language,
     title,
     base,
+    branch: preflightResult.branch,
     draft: args.draft,
     bodyFile,
-    dryRun: false
+    dryRun: false,
+    warnings: preflightResult.warnings
   }
 
   try {

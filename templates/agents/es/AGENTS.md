@@ -17,6 +17,7 @@ Este workspace está orquestado por brain-corp.
 - `/init-work <TICK-XXX>`: crea la feature en `.brain/features/<ticket>/`.
 - `/specify`, `/plan`, `/tasks`, `/implement`: flujo SDD nativo.
 - `/analyze`: audita coherencia y detecta spec drift.
+- Pull requests: usa la skill `brain-corp-pr` (`brain pr TICK-XXX`).
 - `/sanity`: valida coherencia de tickets.
 - `/sync`: publica el backlog como issues de GitHub.
 

@@ -21,5 +21,6 @@ Usa esta skill cuando trabajes dentro de un workspace orquestado por brain-corp.
 - `/specify`, `/plan`, `/tasks`: flujo SDD nativo (EARS).
 - `/implement`: ejecuta tareas en modo checkpoint o batch.
 - `/analyze`: audita coherencia y detecta spec drift.
+- Pull requests: usa la skill `brain-corp-pr` (`brain pr TICK-XXX`).
 - `/sanity`: valida coherencia de tickets.
 - `/sync`: publica el backlog como issues.

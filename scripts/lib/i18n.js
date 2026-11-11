@@ -21,7 +21,7 @@ const MESSAGES = {
     'bin.cmd.pr': 'Create a pull request from a ticket using the bundled template.',
     'bin.cmd.audit': 'Native repository audits.',
     'bin.cmd.initWork': 'Initialize an SDD feature in .brain/.',
-    'bin.cmd.specify': 'Generate spec.md (EARS).',
+    'bin.cmd.specify': 'Generate spec.md (EARS), initializing the feature if needed.',
     'bin.cmd.plan': 'Generate plan.md.',
     'bin.cmd.tasks': 'Generate tasks.md.',
     'bin.cmd.implement': 'Run tasks (checkpoint or batch).',
@@ -119,7 +119,7 @@ Usage:
 
 Commands:
   init-work   Create .brain/features/<ticket>/ and contract if it crosses sidecars.
-  specify     Generate spec.md in EARS format.
+  specify     Generate spec.md in EARS format (initializes the feature if needed).
   plan        Generate plan.md.
   tasks       Generate tasks.md.
   implement   Guide task execution (checkpoint or batch).
@@ -138,6 +138,7 @@ Options:
     'sdd.failMissingValue': 'Missing value for {option}',
     'sdd.failUnknownOption': 'Unknown option: {option}',
     'sdd.featureInitialized': '[sdd] Feature {ticket} initialized at {dir}',
+    'sdd.autoInit': '[sdd] Feature {ticket} initialized automatically at {dir}',
     'sdd.repository': '[sdd] Repository: {repo} ({domain})',
     'sdd.templates': '[sdd] Templates: {created} new, {skipped} existing.',
     'sdd.contractCreated': '[sdd] contract.md generated (cross-sidecar integration detected).',
@@ -243,7 +244,8 @@ Options:
   --json               Print the result as JSON.
   --help               Show this help.
 
-The command does not run commit or push. The branch must already exist on the remote.`,
+The command does not run commit or push. The branch must already exist on the remote.
+Preflight: fails if the current branch equals the base, if the branch or base is not published to origin, or if origin is missing; warns about uncommitted changes.`,
     'pr.missingValue': 'Missing value for {option}',
     'pr.unknownOption': 'Unknown option: {option}',
     'pr.ticketRequired': 'A ticket is required. Usage: brain pr TICK-XXX.',
@@ -255,6 +257,13 @@ The command does not run commit or push. The branch must already exist on the re
     'pr.dryRun': '[pr] Dry run: {title} ({repo} -> {base})',
     'pr.created': '[pr] Pull request created: {url}',
     'pr.createFailed': 'Could not create the pull request: {error}',
+    'pr.preflightNoGit': 'Could not inspect git in {path}: {error}',
+    'pr.preflightDetached': 'HEAD is detached in {path}. Switch to a feature branch before opening the PR.',
+    'pr.preflightSameBranch': 'Current branch "{branch}" is the same as base branch "{base}". Create a feature branch, commit and push it before opening the PR.',
+    'pr.preflightDirty': '{count} uncommitted change(s) in {path}. The PR will use the pushed branch; local changes will not be included. Commit or stash them first if they belong to this delivery.',
+    'pr.preflightNoOrigin': 'Repository {path} has no "origin" remote. Add it and push the branch before opening the PR.',
+    'pr.preflightBaseMissing': 'Base branch "{base}" does not exist on origin. Choose an existing base with --base <branch>.',
+    'pr.preflightBranchMissing': 'Branch "{branch}" is not published to origin. Push it first with: git push -u origin {branch}',
 
     'complete.missingValue': 'Missing value for {option}',
     'complete.unknownArg': 'Unrecognized argument: {arg}',
@@ -483,7 +492,7 @@ Redeploys prompts, skills, SDD templates, central constitution and engine comman
     'bin.cmd.pr': 'Crear un pull request desde un ticket con la plantilla incluida.',
     'bin.cmd.audit': 'Auditorías nativas del repositorio.',
     'bin.cmd.initWork': 'Inicializar una feature SDD en .brain/.',
-    'bin.cmd.specify': 'Generar spec.md (EARS).',
+    'bin.cmd.specify': 'Generar spec.md (EARS), inicializando la feature si hace falta.',
     'bin.cmd.plan': 'Generar plan.md.',
     'bin.cmd.tasks': 'Generar tasks.md.',
     'bin.cmd.implement': 'Ejecutar tareas (checkpoint o batch).',
@@ -581,7 +590,7 @@ Uso:
 
 Comandos:
   init-work   Crea .brain/features/<ticket>/ y el contrato si cruza sidecars.
-  specify     Genera spec.md en formato EARS.
+  specify     Genera spec.md en formato EARS (inicializa la feature si hace falta).
   plan        Genera plan.md.
   tasks       Genera tasks.md.
   implement   Guía la ejecución de tareas (checkpoint o batch).
@@ -600,6 +609,7 @@ Opciones:
     'sdd.failMissingValue': 'Falta el valor para {option}',
     'sdd.failUnknownOption': 'Opción desconocida: {option}',
     'sdd.featureInitialized': '[sdd] Feature {ticket} inicializada en {dir}',
+    'sdd.autoInit': '[sdd] Feature {ticket} inicializada automáticamente en {dir}',
     'sdd.repository': '[sdd] Repositorio: {repo} ({domain})',
     'sdd.templates': '[sdd] Plantillas: {created} nuevas, {skipped} existentes.',
     'sdd.contractCreated': '[sdd] contract.md generado (integración entre sidecars detectada).',
@@ -705,7 +715,8 @@ Opciones:
   --json               Imprime el resultado en JSON.
   --help               Muestra esta ayuda.
 
-El comando no ejecuta commit ni push. La rama debe existir ya en el remoto.`,
+El comando no ejecuta commit ni push. La rama debe existir ya en el remoto.
+Preflight: falla si la rama actual es igual a la base, si la rama o la base no están publicadas en origin, o si falta origin; avisa si hay cambios sin commit.`,
     'pr.missingValue': 'Falta el valor para {option}',
     'pr.unknownOption': 'Opción desconocida: {option}',
     'pr.ticketRequired': 'Falta el ticket. Uso: brain pr TICK-XXX.',
@@ -717,6 +728,13 @@ El comando no ejecuta commit ni push. La rama debe existir ya en el remoto.`,
     'pr.dryRun': '[pr] Dry run: {title} ({repo} -> {base})',
     'pr.created': '[pr] Pull request creado: {url}',
     'pr.createFailed': 'No se pudo crear el pull request: {error}',
+    'pr.preflightNoGit': 'No se pudo inspeccionar git en {path}: {error}',
+    'pr.preflightDetached': 'HEAD está separado (detached) en {path}. Cambia a una rama de feature antes de abrir el PR.',
+    'pr.preflightSameBranch': 'La rama actual "{branch}" es la misma que la rama base "{base}". Crea una rama de feature, haz commit y push antes de abrir el PR.',
+    'pr.preflightDirty': 'Hay {count} cambio(s) sin commit en {path}. El PR usará la rama publicada; los cambios locales no se incluirán. Haz commit o stash si pertenecen a esta entrega.',
+    'pr.preflightNoOrigin': 'El repositorio {path} no tiene remoto "origin". Añádelo y publica la rama antes de abrir el PR.',
+    'pr.preflightBaseMissing': 'La rama base "{base}" no existe en origin. Elige una base existente con --base <branch>.',
+    'pr.preflightBranchMissing': 'La rama "{branch}" no está publicada en origin. Publícala primero con: git push -u origin {branch}',
 
     'complete.missingValue': 'Falta el valor para {option}',
     'complete.unknownArg': 'Argumento no reconocido: {arg}',

@@ -9,7 +9,7 @@ Act as the **Principal Analyst Architect of brain-corp** writing the EARS specif
 
 ## Protocol
 
-1. Resolve the active ticket from `<repo>/.brain/active.json` or from the `TICK-XXX` argument. If no feature is initialized, run `/init-work` first.
+1. Resolve the active ticket from `<repo>/.brain/active.json` or from the `TICK-XXX` argument. If no feature is initialized, the engine initializes it automatically (`init-work` equivalent) before scaffolding the spec.
 2. Run the scaffold:
 
    ```bash
