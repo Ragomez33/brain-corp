@@ -155,7 +155,7 @@ Flow:
 
 - `/init-work` creates the feature and sets `.brain/active.json`; it generates `contract.md` only if the ticket is `shared` or crosses map `relationships`. `/specify` runs this initialization automatically when the feature does not exist yet.
 - `/implement` supports **checkpoint** mode (one task and confirmation) or **batch** mode (autonomous complete block).
-- `/analyze` audits coherence and detects drift between spec, tasks and code. The former ticket-generating `/analyze` is now called `/cross-analyze`.
+- `/analyze` audits coherence and detects drift between spec, tasks and code. Task paths are resolved against both the base repository and the workspace root, so `shared` tickets can reference `sidecars/<repo>/...` directly. The former ticket-generating `/analyze` is now called `/cross-analyze`.
 - If a ticket is `shared`, choose the base repository with `--repo <id>`; the spec and contract live there and the orchestrator resolves dependencies from `system-map.json`, without duplicating specs globally.
 
 ## Requirements

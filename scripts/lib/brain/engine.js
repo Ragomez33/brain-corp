@@ -287,8 +287,9 @@ function analyze({ ticketId, repoId, write = true }) {
     }
     if (candidate.includes('*') || candidate.includes('<') || candidate.includes('[')) continue
 
-    const absolute = path.resolve(ctx.repoDir, candidate)
-    if (!fs.existsSync(absolute)) {
+    const repoAbsolute = path.resolve(ctx.repoDir, candidate)
+    const workspaceAbsolute = path.resolve(ctx.rootDir, candidate)
+    if (!fs.existsSync(repoAbsolute) && !fs.existsSync(workspaceAbsolute)) {
       warnings.push(`Path referenced in tasks.md does not exist in the repository: ${candidate}`)
     }
   }
